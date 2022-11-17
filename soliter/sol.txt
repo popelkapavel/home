@@ -1,0 +1,70 @@
+//@bee,hexa,sol
+       OO
+       OOO
+       OO
+ OOOOOOO.OOOOOOO
+OOOOOOOOOOOOOOOO
+ OOOOOOOOOOOOOOO
+ OOOO  OO  OOOO
+       OOO
+       OO
+       OOO
+       OO
+        O
+
+//@bee2,hexa,sol
+   OOO
+   OOOO
+   OOOO
+   OOOO
+   OOO
+   OOO 
+ O OOO O O
+ OOOOOOOOOOO
+OOOOOOOOOOOO 
+ OOOOOOOOOOO
+ O OOO O O     
+   OOO      
+   OOO     
+   OOOO     
+   OOOO     
+   OOOO     
+   OOO  
+
+//@pyramid,hexa,sol
+      OOOOOO O
+    O  OOOOO OO
+   OO  OOOO OOO
+   OOO  OOO OOOO
+  OOOO  OO OOOOO
+  OOOOO  O OOOOOO
+          OOOOOOO
+OOOOOOOOOO
+OOOOOOOOO O
+ OOOOOOOO OO
+ OOOOOOO OOO
+  OOOOOO OOOO
+  OOOOO OOOOO
+   OOOO OOOOOO
+   OOO OOOOOOO
+    OO OOOOOOOO
+    O
+
+//@on&off,quad,onoff
+OOOOOOOOO
+OOOOOOOOO
+OOOOOOOOO
+ OOOOOOO
+ OOOOOOO
+  OOOOO
+  OOOOO
+   OOO
+
+//@diamond,tria,onoff
+OOOOOOOOOOO
+OOOOOOOOOOO
+ OOOOOOOOO
+  OOOOOOO
+   OOOOO
+    OOO
+     O
