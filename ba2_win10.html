@@ -1,0 +1,36 @@
+<html>
+<head>
+<title>BA2 in WIN10</title>
+</head>
+<body>
+<h1>Blazing Angels 2: Secret Missions of WWII on Windows 10</h1>
+
+<pre>
+1. Download 1.01 patch 
+2. Download dinput8.dll
+3. Change framerate in registry to 60 decimal or 3c hexadecimal (run regedit as administrator !)
+4. Set bin\ba2.exe file windows 7 or XP compatibility and run as administrator
+5. Run directly ba2.exe
+
+	happy shooting
+
+PS:Change plane with 'x' in Flying tigers (tactical map key?)
+
+---- ba2.reg file 64 bit ---
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Ubisoft\BlazingAngels2\{D8768524-DE8D-40D3-904B-B1FCC31CF9F9}\Basic video]
+"ResolutionRefreshRate"=dword:0000003c
+------
+---- ba2.reg file 32 bit (probably)---
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Ubisoft\BlazingAngels2\{D8768524-DE8D-40D3-904B-B1FCC31CF9F9}\Basic video]
+"ResolutionRefreshRate"=dword:0000003c
+------
+
+</pre>
+<a href=https://community.pcgamingwiki.com/files/file/59-microsoft-directinput-dinput8dll/>dinput8.dll</a>
+<br>
+<a href=http://steamcommunity.com/app/15230/discussions/0/541907867748495360/>steam discusson</a>
+</body><html>
