@@ -1,0 +1,120 @@
+//@Star,hexa,sol
+ .
+OOOO
+OOO
+OOOO
+ O
+
+//@Pyramid,hexa,sol
+  .
+  OO
+ OOO
+ OOOO
+OOOOO
+
+//@Trapezoid,hexa,sol
+ OOOO
+ .OOOO
+OOOOOO
+OOOOOOO
+
+//@Standard,quad,sol
+  OOO  
+  OOO  
+OOOOOOO
+OOO.OOO
+OOOOOOO
+  OOO  
+  OOO  
+
+//@Square,quad,sol
+OOOOOO
+OOOOOO
+OOO.OO
+OOOOOO
+OOOOOO
+OOOOOO
+
+
+//@European,quad,sol
+  OOO  
+ OOOOO 
+OOO.OOO
+OOOOOOO
+OOOOOOO
+ OOOOO 
+  OOO  
+
+//@Asymetric,quad,sol
+  OOO  
+  OOO  
+  OOO  
+OOOOOOOO
+OOO.OOOO
+OOOOOOOO
+  OOO   
+  OOO   
+
+//@Rhombus,hexa,sol
+  .OOOO
+  OOOOO
+ OOOOO
+ OOOOO
+OOOOO
+
+//@German,quad,sol
+   OOO
+   OOO
+   OOO
+OOOOOOOOO
+OOOO.OOOO
+OOOOOOOOO
+   OOO
+   OOO
+   OOO  
+
+//@Triangle,hexa,sol
+   OO
+    O
+   OO
+   O.O
+  OOOO
+  OOOOO
+OOOOOOOO
+ O     O
+
+
+//@Diamond,quad,sol
+    O
+   OOO
+  OO.OO
+ OOOOOOO
+OOOOOOOOO
+ OOOOOOO
+  OOOOO
+   OOO
+    O
+
+
+//@Showflake,hexa,sol
+  OO OO
+  OOOOOO
+  OOOOO
+ OOOOOOOO
+OOOO.OOOO
+ OOOOOOOO
+  OOOOO
+  OOOOOO
+  OO OO
+
+//@Hexagonal,hexa,sol
+  OOOOO
+  OOOOOO
+ OOOOOOO
+ OOOOOOOO
+OOOO.OOOO
+ OOOOOOOO
+ OOOOOOO
+  OOOOOO
+  OOOOO
+

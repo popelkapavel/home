@@ -1,0 +1,192 @@
+<html>
+<form name=f>
+x:<input name=xmin value=-1 />..<input name=xmax value=1 />
+<br>
+y:<input name=ymin value=-1 />..<input name=ymax value=1 />
+z:<input name=zmin value=-1 />..<input name=zmax value=1 />
+<br>
+<input type=button onclick=recalc() value=draw />
+<input type=button onclick=recalc2d() value="draw 2D" />
+t: <input type=checkbox name=play />
+  <input size=20 name=speed value='1.0' />
+2D n: <input size=2 name=nd2 value='48' /> saw:<input size=2 name=saw value='0' /><input type=checkbox name=sawm checked />
+<br>&#x222b;<input type=checkbox name=ai />&#x2202;<input type=checkbox name=ad />
+  <span style='color:#cc0000;'>a: </span><input size=100 name=func value='x*x-1' /><input size=50 name=stat tabindex=-1 />
+
+<br>&#x222b;<input type=checkbox name=bi />&#x2202;<input type=checkbox name=bd />
+  <span style='color:#0000ff;'>b: </span><input size=100 name=func2 value='1-x*x' /><input size=50 name=stat2  tabindex=-1 />
+<br>&#x222b;<input type=checkbox name=ci />&#x2202;<input type=checkbox name=cd />
+  <span style='color:#000000;'>c: </span><input size=100 name=func3 value='0' /><input size=50 name=stat3  tabindex=-1 />
+<br>
+
+<canvas id="cv1" width="1024" height="768" style="border:1px solid black;"></canvas>
+
+<script type="text/javascript">
+var cv1=document.getElementById("cv1");
+var ctx=cv1.getContext("2d");
+var grd = ctx.createLinearGradient(0, 0, 640, 0);
+grd.addColorStop(0, "#FFEEDD");
+grd.addColorStop(1, "#DDEEFF");
+
+
+function xreplace(fx) {   
+  //fx=fx.replace(',','.');//.replace(/\bpi\b/g,'Math.PI').replace(/\be\b/g,'Math.E');
+  fx=fx.replace(/\b(atan|atan2|sin|cos|asin|acos|sinh|cosh|asinh|acosh|pow|log|exp|sqrt|abs|ceil|floor|min|max)\b/gi,'Math.$1');
+  return fx;
+}
+
+var pi=Math.PI,e=Math.E,ln10=Math.LN10;
+function sig(x) { return x<0.5?2*x*x:1-2*(1-x)*(1-x);}
+function pro(x,y) { return x/(x+y);}
+function avg(x,y,z) { return z<1/0?z*x+(1-z)*y:(x+y)/2;}
+function sgn(x) { return x<0?-1:x>0?1:0;}
+function iff(x,y,z) { return x>0?y:z;}
+function mix(x,y,z) { return z<=0?x:z>=1?y:z*x+(1-z)*y;}
+function max3(x,y,z) { return x>y?x>z?x:z:y>z?y:z;}
+function min3(x,y,z) { return x<y?x<z?x:z:y<z?y:z;}
+function mux3(c,x,y,z) { var m=x+y*(c-x)/c;m+=z*(c-m)/c;return m;}
+function dix3(c,x,y,z) { return 1/(1/(c+x)+1/(c+y)+1/(c+z));}
+function circ(x,y) { return Math.sqrt(x*x+y*y);}
+function diam(x,y) { return Math.abs(x)+Math.abs(y);}
+function squa(x,y) { return Math.max(Math.abs(x),Math.abs(y));}
+function sqr1(x) { x=1-x;return 1-x*x;}
+function sqr2(x,y,z) { return x*x+y*y;}
+function sqrl(x,y,x1,y1,x2,y2) {
+  var dx=x2-x1,dy=y2-y1,ax,ay,a,d=dx*dx+dy*dy;
+  ax=x-x1,ay=y-y1;
+  a=ax*dx+ay*dy;
+  if(a<=0) return ax*ax+ay*ay;
+  if(a>=d) return ax=x-x2,ay=y-y2,ax*ax+ay*ay;
+  a=ax*dy-ay*dx;
+  return a*a/d;
+}
+function idx(i,a,b,c,d,e,f,g,h) { return i<4?i<2?i?b:a:i<3?c:d:i<6?i<5?e:f:i<7?g:h;}
+function round2(x,y) { 
+  if(y>0) {
+    var e=Math.pow(10,y);
+    return Math.round(e*x)/e;
+  } else
+    return Math.round(x);
+}
+function int(x) { return (1.0*x).toFixed(0);}
+function bitcount(x) {
+  var c=0,i=x&65535,j=(x>>16)&65535;
+  for(;i;i>>=1,j>>=1) c+=(i&1)+(j&1);  
+  return c;
+}
+
+function xeval(fx) { return eval(xreplace(fx));}
+function ft() { 
+  s=1000*parseFloat(f.speed.value);
+  return Math.abs(new Date().getTime()%(2*s)-s)/s;
+}
+
+var rec;
+function recalc() {
+  var j,i,x,y,w=cv1.width,h=cv1.height;
+  var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx;
+  var t=ft();
+  var g,a2=/\ba\b/.test(f.func2.value),a3=/\ba\b/.test(f.func3.value),a=a2||a3?[]:0;
+  var b=/\bb\b/.test(f.func3.value)?[]:0,ab=a||b;
+  var ji,jd,dd=w/(xa-xi),l,y1,y2,max,may,mix,miy,zx,zy;
+  rec=0;
+  ctx.lineWidth=2;
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,cv1.width,cv1.height);
+  for(j=0;j<3;j++) {
+    fx=xreplace([f.func,f.func2,f.func3][j].value)
+    fx=fx.replace(/\bt\b/g,'('+t+')')
+    ctx.beginPath();
+    ctx.strokeStyle=['red','blue','black'][j];
+    y2=undefined,l=0;
+    ji=[f.ai,f.bi,f.ci][j].checked,jd=[f.ad,f.bd,f.cd][j].checked;
+    miy=may=zy=NaN;
+    for(i=0;i<w;i++) {
+       x=xi+i*(xa-xi)/(w-1);
+       g=fx;
+       if(ab) {
+         if(j==1&&a2||j==2&&a3) g=g.replace(/\ba\b/g,'('+a[i]+')');
+         if(j==2&&b) g=g.replace(/\bb\b/g,'('+b[i]+')');
+       }
+       y=y1=eval(g.replace(/\bx\b/g,'('+x+')'));
+       if(ji) y=l+=i?y1/dd:0;
+       if(jd) y=i?(y1-y2)*dd:undefined;
+       if(isNaN(may)||y>may) may=y,max=x;
+       if(isNaN(miy)||y<miy) miy=y,mix=x;
+       if(isNaN(zy)||Math.abs(y)<zy) zy=Math.abs(y),zx=x;
+       y2=y1;
+       if(ab) {
+         if(a&&!j) a.push(y);
+         if(b&&j==1) b.push(y);
+       }
+       ctx.lineTo(i,(ya-y)*h/(ya-yi));
+    }
+    [f.stat,f.stat2,f.stat3][j].value='min: '+round2(miy,6)+'@'+round2(mix,6)+' max: '+round2(may,6)+'@'+round2(max,6)+' zero: '+round2(zy,6)+'@'+round2(zx,6);
+    ctx.stroke();   
+  }
+  // ctx.fillStyle="red";
+  // ctx.fill();
+}
+
+function cmix(a,b,r) {
+  if(r>0&&r<1) {
+    var a0=a&255,a1=(a>>8)&255,a2=(a>>16)&255;
+    var b0=b&255,b1=(b>>8)&255,b2=(b>>16)&255;
+    var s=1-r;
+    return (s*a0+r*b0)|((s*a1+r*b1)<<8)|((s*a2+r*b2)<<16);
+  } else return r>0.5?b:a;
+}
+
+function cstyle(x) {
+  x=(x&0xffffff).toString(16);
+  return '#'+'0'.repeat(6-x.length)+x;
+}
+
+function saw(x,n,m) {
+  n*=x;
+  x=n%1;
+  if(m&&(n&1)) x=1-x;
+  return x;
+}
+
+function recalc2d() {
+  var j,i,x=[],y=[],w=cv1.width,h=cv1.height,fx,n=f.nd2.value*1,t=ft(),wn=w/n,hn=h/n;
+  var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx,fy;
+  var zi=xeval(f.zmin.value),za=xeval(f.zmax.value);
+  var sw=f.saw.value*1,swm=f.sawm.checked;
+  var min=Infinity,max=-Infinity,mii,mij,mai,maj;
+  rec=2;
+  fx=xreplace(f.func.value);
+  fx=fx.replace(/\bt\b/g,'('+t+')');
+  for(i=0;i<n;i++) { x.push(xi+i*(xa-xi)/(n-1));y.push(yi+i*(ya-yi)/(n-1));}
+  for(i=0;i<n;i++) {
+    fy=fx.replace(/\bx\b/g,'('+x[i]+')');
+    for(j=0;j<n;j++) {
+      z=eval(fy.replace(/\by\b/g,'('+y[j]+')'));
+      if(z<min) min=z,mii=i,mij=j;else if(z>max) max=z,mai=i,maj=j;
+      z=(z-zi)/(za-zi);
+      if(sw) z=saw(z,sw,swm);
+      ctx.fillStyle=cstyle(z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1));
+      ctx.fillRect(i*w/n,j*h/n,wn,hn);
+    }
+  }
+  f.stat.value='min: '+round2(min,6)+'@'+round2(x[mii],6)+','+round2(y[mij],6);
+  f.stat2.value='max: '+round2(max,6)+'@'+round2(x[mai],6)+','+round2(y[maj],6);
+}
+
+function recalc1() {
+ if(rec) recalc2d();else recalc();
+}
+
+window.addEventListener('keydown',function(e) {
+  if(e.keyCode==13) recalc1();
+});
+
+function onTimer() { 
+  if(f.play.checked) recalc1();
+}
+
+setInterval(onTimer,20);
+</script>
+</form>
+</html>
