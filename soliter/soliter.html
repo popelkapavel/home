@@ -177,8 +177,8 @@ circl</x>
 <circle cx=5 cy=5 r=3 stroke=black stroke-width=1 fill=#ff0 />
 <circle cx=12 cy=12 r=3 stroke=black stroke-width=1 fill=#000 />
 </svg>
-
 fill</x>
+<input name=white type=checkbox title="white" />&#9898; white
 </td></tr></table>
 
 <script type="text/javascript">
@@ -1058,7 +1058,7 @@ function _mdesign(dm,up,mu) {
     var c=board[py][px],y;
     e=_extent(lx,ly);
     if(up) {
-      if(lx==px&&ly==py) board[ly][lx]=c=='o'?onoff?'w':' ':c=='w'?'x':c=='x'?' ':'o';
+      if(lx==px&&ly==py) board[ly][lx]=c=='o'?f.white.checked?'w':'x':c=='w'?'x':c=='x'?' ':'o';
       else board[ly][lx]=c;
     } else {
       if(Math.abs(mm[0]-lx)>1||Math.abs(mm[1]-ly)>1) _dline(mm[0],mm[1],lx,ly,c);
