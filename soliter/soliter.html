@@ -13,6 +13,8 @@
 <option value=onoff >On&amp;Off</option>
 <option value=ono_diam >Diamonds</option>
 </select>
+<select style=float:right;margin-bottom:2px; onchange=setchg(1) name=uset >
+</select>
 <br>
 <input type=button onclick=transf(0,event) value="v-" title="rotate text (Ctrl) rotate game" />
 <input type=button onclick=transf(1,event) value="|" />
@@ -118,11 +120,9 @@ OOOOOOO  OOOOOOOOO
             OOO
 </textarea>
 <br/>
-<select style=margin-bottom:2px; onchange=setchg(1) name=uset >
-</select>
  <a download="out.txt" target=_blank id=asave ></a>
- <input type=file name=file id=file onchange=_file_open() />
- <input type=button value=Save onclick=_file_save() />
+ <input type=file name=file id=file onchange=_file_open() title="open text from disk file ..." />
+ <input type=button value=Save onclick=_file_save() title="save text to disk file ..."/>
 </td> <td style=vertical-align:top >
 <canvas id="cv1" width="640" height="480" style="border:1px solid black;"></canvas>
 <br>
