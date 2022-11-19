@@ -187,6 +187,7 @@ fill</x>
 <option value=xffe >xffe : black only</option>
 <option value=xxee >xxee : white just jump</option>
 <option value=xxwe >xxwe : white makes white</option>
+<option value=wxwx >wxwx : black to white</option>
 </select>
 </td></tr></table>
 
@@ -592,7 +593,7 @@ function _white() {
   return 0;
 }
 function _game2txt() {
-  var s=[],c,l,r,x,y,xi=-1,yi,ya=0,n,wh=_white();
+  var s=[],c,l,r,x,y,xi=-1,yi,ya=0,n,wh=f.white2.value!='xxff'||_white();
   n=f.ta.value.match(/@[^,\r\n]+/);
   n='//'+(n?n[0]+',':'')+(tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
   for(y=0;y<board.length;y++) {
