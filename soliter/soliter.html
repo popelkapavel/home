@@ -180,16 +180,24 @@ circl</x>
 fill</x>
 <br>
 <input name=white type=checkbox title="edit with white" />&#9898; white
-<select style=margin-bottom:2px; name=white2 onchange=whitechg() title="white peg rule">
-<option value=xxff selected>xxff : white jump flips</option>
+<table title="black&amp;white jump rules" style=text-align:center ><tr><td colspan=4>
+<select style=margin-bottom:2px; name=white2 onchange=whitechg(1)>
+<option value=xxxx selected>xxxx : all clears</option>
+<option value=wxwx >wxwx : black to white</option>
+<option value=xxff >xxff : white jump flips</option>
 <option value=xffx >xffx : cross jump flips</option>
 <option value=xbxb >xbxb : white to black</option>
 <option value=xffe >xffe : black only</option>
 <option value=xxee >xxee : white just jump</option>
 <option value=xxwe >xxwe : white makes white</option>
-<option value=wxwx >wxwx : black to white</option>
-</select>
-</td></tr></table>
+</select></td></tr>
+<tr><th>jump</th><th>over</th><td>result</td><td>
+</td></tr>
+<tr><td>&#9899;</td><td>&#9899;</td> <td><select name=w0 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
+<tr><td>&#9899;</td><td>&#9898;</td> <td><select name=w1 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
+<tr><td>&#9898;</td><td>&#9899;</td> <td><select name=w2 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
+<tr><td>&#9898;</td><td>&#9898;</td> <td><select name=w3 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
+</table>
 
 <script type="text/javascript">
 var cv1=document.getElementById("cv1");
@@ -211,7 +219,7 @@ cv1.onmousedown=_mdown;
 cv1.onmousemove=_mmove;
 cv1.onmouseup=_mup;
 var i,hxa=click('hexa',hexachg),dxa=click('des',deschg),mxa=click('mono',monochg),depth=0,game={},ugame={};
-monochg();hexachg();onoffchg();deschg();whitechg();
+monochg();hexachg();onoffchg();deschg();whitechg(1);
 draw(1);
 game['stan']='//@Standard,quad,sol\n\
   OOO  \n\
@@ -530,7 +538,23 @@ function onoffchg(dr,m) {
   diag=f.diag.checked;
   if(dr&&!depth)  _drawboard();
 }
-function whitechg(dr) { white=f.white2.value; }
+function _wx(e,x) {
+  if(x=='e') x=e;else if(x=='f') x=e=='w'?'b':'w';
+  return x;
+}
+function whitechg(src,value) {
+ if(!src) white=value;
+ else if(src==1) white=f.white2.value;
+ else if(src==2) white=f.w0.value+f.w1.value+f.w2.value+f.w3.value;
+ var e='bwbw';
+ if(src!=1) f.white2.value=white;
+ if(src!=2) {
+   f.w0.value=_wx('b',white[0]);
+   f.w1.value=_wx('w',white[1]);
+   f.w2.value=_wx('b',white[2]);
+   f.w3.value=_wx('w',white[3]);
+ }
+}
 function hexachg(e) {
   hexa=hxa[1].checked;tria=hxa[2].checked,tria2=hxa[3].checked,tria4=hxa[4].checked;
   if(e&&!depth) _resizea(),_drawboard();
@@ -547,7 +571,7 @@ function _cmd(a) {
   if(a) a.forEach(function(x) {
     if(/quad|hexa|tria/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:0].checked=1,hexachg();
     else if(/sol|onoff/.test(x)) (f.onoff.checked=(onoff=x=='onoffo'?2:x=='onoffx'?4:x=='onoff3'?3:x=='onoff'?1:0)>0)?f.onoff2.value=onoff:0;
-    else if(/white_/.test(x)) f.white2.value=white=x.substr(6);
+    else if(/white_/.test(x)) whitechg(0,x.substr(6));
     else if(/(no)?diag/.test(x)) f.diag.checked=(diag=x=='diag');
     else if(/col\d+/.test(x))
       x=+x.substr(3),depth++,mxa[x==2?1:x==23?2:x==3?3:x==4?4:0].checked=1,monochg();
@@ -1061,12 +1085,21 @@ function _dfill(px,py,c) {
   }
 }
 function _design(e) { return e.ctrlKey?e.shiftKey?4:1:design;}
+function _extx() {
+  for(y in board) if(board[y][0]!=' ') return 1;
+  return 0;
+}
+function _exty() {
+  var b0=board[0];
+  for(x in b0) if(b0[x]!=' ') return 1;
+  return 0;
+}
 function _mdesign(dm,up,mu) {
  if(!dm) return;
  var lx=mu[0],ly=mu[1];
  if(up) {
-   if(lx<1) lx=1,_extentx(),mp[0]++;
-   if(ly<1) ly=1,_extenty(),mp[1]++;
+   if(lx<1||_extx()) lx=1,_extentx(),mp[0]++;
+   if(ly<1||_exty()) ly=1,_extenty(),mp[1]++;
  }
  if(lx>0&&ly>0&&!board[ly+1]||!board[ly][lx+1]) e=_extent(lx,ly);
  var e,px=mp[0],py=mp[1],ex=lx,ey=ly;
