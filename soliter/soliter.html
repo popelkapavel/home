@@ -657,7 +657,7 @@ function _game2txt() {
     }
     s.push(l);
   }
-  var sy=hexa||tria||tria4?2:tria2?4:1,sx=hexa?1:sy;
+  var sy=hexa||tria||tria4||penta?2:tria2?4:1,sx=penta?4:hexa?1:sy;
   if(yi>0) { yi=1+(((yi-1)/sy)|0)*sy;s=s.slice(yi);ya-=yi;}
   s=s.slice(0,ya+1);
   if(xi>0) { xi=1+(((xi-1)/sx)|0)*sx;for(y=0;y<s.length;y++) s[y]=s[y].substr(xi); }
@@ -1010,12 +1010,12 @@ function _drawborder15(x,y) {
 }
 
 function _drawboard() {
-  var n,m,x,y,c,nx=board[0].length-1,ny=board.length-1,w,ms=+new Date(),p=f.peg.checked;
+  var n,m,b,x,xe,y,c,nx=board[0].length-1,ny=board.length-1,w,ms=+new Date(),p=f.peg.checked;
   n=m=0,_clear();
   ctx.strokeStyle='#000';
   for(y=0;y<ny;y++)
-    for(x=0;x<nx;x++)
-      if((c=board[y][x])!=' ') {
+    for(x=0,b=board[y],xe=b.length;x<xe;x++)
+      if((c=b[x])!=' ') {
         penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell6x(x,y):_drawcell(x,y);
         if((w=c=='w')||c=='o') {
           n+=onoff?c=='o':c=='o'||w,penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg6(x,y,w,p):_drawpeg(x,y,w,p);
@@ -1176,9 +1176,19 @@ function _dfill(px,py,c) {
   while(n<fifo.length) {
     x=x1=fifo[n],y=fifo[n+1],n+=2,b=board[y],m=fifo.length,u=y>1,d=y+1<board.length;
     t=0;
-    f=0;if(x>1&&(f=b[x-1])==s) t++,fifo.push(x-1,y);else if(f==nc||f=='f') t++;
-    f=0;if(x+1<b.length&&(f=b[x+1])==s) t++,fifo.push(x+1,y);else if(f==nc||f=='f') t++;
-    if(tria||tria2) { 
+    if(!penta&&!tria4) {
+      f=0;if(x>1&&(f=b[x-1])==s) t++,fifo.push(x-1,y);else if(f==nc||f=='f') t++;
+      f=0;if(x+1<b.length&&(f=b[x+1])==s) t++,fifo.push(x+1,y);else if(f==nc||f=='f') t++;
+    }
+    if(penta||tria4) {
+      var i,d=(tria4?_border5:_border15)(x,y),l=d.length,x2,y2;
+      for(i=0;i<l;i+=2) {
+        f=0,x2=x+d[i],y2=y+d[i+1];
+        if(y2>1&&y2+1<board.length&&(f=board[y2][x2])==s) t++,fifo.push(x2,y2);
+        else if(f==nc||f=='f') t++;
+      }
+    } else if(tria4) { 
+    } else if(tria||tria2) { 
       a=((tria2?0^((x+1)>>1):0)^x^y)&1;
       f=0;if(a&&u&&(f=board[y-1][x])==s) t++,fifo.push(x,y-1);else if(f==nc||f=='f') t++;
       f=0;if(!a&&d&&(f=board[y+1][x])==s) t++,fifo.push(x,y+1);else if(f==nc||f=='f') t++;
@@ -1192,7 +1202,7 @@ function _dfill(px,py,c) {
       f=0;if(u&&(f=board[y-1][x])==s) t++,fifo.push(x,y-1);else if(f==nc||f=='f') t++;
       f=0;if(d&&(f=board[y+1][x])==s) t++,fifo.push(x,y+1);else if(f==nc||f=='f') t++;
     }
-    if(c<0&&t==(hexa?6:tria||tria2?3:4)) 
+    if(c<0&&t==(penta?5:hexa?6:tria||tria2||tria4?3:4)) 
        board[fifo[n-1]][fifo[n-2]]='f';
     for(;m<fifo.length;m+=2)
       board[fifo[m+1]][fifo[m]]=nc;
@@ -1376,6 +1386,14 @@ function _switch2(x,y) {
   var dy=(1^x^y^((x+1)>>1))&1?1:-1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
   if(onoff!=2) _f1(x,y);_f2(x,y+dy);
   _f2(x-1,y);_f2(x+1,y);
+}
+
+function _border5(x,y) {
+  var r=(((1^y)&1)<<1)|(1^x&1);
+  if(r==1) return [-1,0,-1,-1,0,1];
+  else if(r==2) return [0,-1,1,1,1,0];
+  else if(r==3) return [-1,0,0,-1,1,-1];
+  else return [-1,1,1,0,0,1];
 }
 
 function _switch5(x,y) {
