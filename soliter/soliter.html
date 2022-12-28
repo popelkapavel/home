@@ -32,7 +32,12 @@
 <option value=2 >on&amp;off o</option>
 <option value=3 >on&amp;off 3</option>
 <option value=4 >on&amp;off x</option>
+</select>
 <input name=diag type=checkbox onclick=onoffchg(0,0,1) title="enable diagonal" />X
+<select style=margin-bottom:2px; name=onoff6 title="on&amp;off hexa and penta mode">
+<option value=0 >*</option>
+<option value=1 selected >&#x25b3</option>
+<option value=2 >&#x2312</option>
 </select>
 |
 <input name=hexa type=radio checked value=4 title=squares />
@@ -704,7 +709,7 @@ function _drawsele(x,y) {
 }
 
 function _points(x,y) {
-  return penta?_points15(x,y):tria4?_points5(x,y):tria2?_points2(x,y):tria?_points3(x,y):hexa?_points6(x,y):_points4(x,y);
+  return penta?_points15(x,y):tria4?_points5(x,y):tria2?_points2(x,y):tria?_points3(x,y):hexa?_points16(x,y):_points14(x,y);
 }
 
 function _points2(x,y) {
@@ -722,12 +727,12 @@ function _points5(x,y) {
   return [cx,cy,sx,sy2,sx,sy];
 }
 
-function _points4(x,y) {
+function _points14(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell;
   return [sx,sy,sx+cell,sy,sx+cell,sy+cell,sx,sy+cell];
 }
 
-function _points6(x,y) {
+function _points16(x,y) {
   var sx=brd+(x+(y&1)/2)*cell6y,sy=brd+((1+y*3)/4)*cell6x,x2=sx+cell6y/2,x3=sx+cell6y;
   return [sx,sy,x2,sy-cell6x/4,x3,sy,x3,sy+cell6x/2,x2,sy+cell6x*3/4,sx,sy+cell6x/2];
 }
@@ -764,8 +769,8 @@ function _idx(ex,ey,xy) {
   return (f>>1)-1;
 }
 
-function _drawcell6x(x,y) {
-  var xy=_points6(x,y);
+function _drawcell16(x,y) {
+  var xy=_points16(x,y);
   //var sx=brd+(x+(y&1)/2)*cell6y,sy=brd+((1+y*3)/4)*cell6x,x2=sx+cell6y/2,x3=sx+cell6y;
   ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[(x+2-(y&1)-(y/2)&1)&1]:mono==21?clr2[(x+(y&1)+y/2)&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#ffffff';
   ctx.beginPath();
@@ -882,13 +887,13 @@ function _drawpeg15(x,y,wh,p) {
   if(wh) ctx.stroke();
 }
 
-function _drawpeg6(x,y,wh,p) {
+function _drawpeg16(x,y,wh,p) {
   var sx=brd+(x+(y&1)/2)*cell6y,sy=brd+((1+y*3)/4)*cell6x,x2=cell6y/2,y2=cell6x/4;
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
   ctx.fillStyle=wh?'#fff':'#000';
   if(p) 
-    _polyex(_points6(x,y),0.75);
+    _polyex(_points16(x,y),0.75);
   else 
     ctx.arc(sx+x2,sy+y2,x2-3,0,2*Math.PI);
   ctx.fill();
@@ -954,21 +959,30 @@ function _line(x,y,x2,y2) {
 
 function _drawborder(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell,c2=cell/2;
-  if(!_xo(board[y-1][x])) _line(sx,sy,sx+cell,sy);
-  if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
   if(!_xo(board[y][x-1])) _line(sx,sy,sx,sy+cell);
+  if(!_xo(board[y-1][x])) _line(sx,sy,sx+cell,sy);
   if(!_xo(board[y][x+1])) _line(sx+cell,sy,sx+cell,sy+cell);
+  if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
 }
 
-function _drawborder6(x,y) {
-  var xy=_points6(x,y),dx=y&1?0:-1;
+function _border16(x,y) {
+  var dx=y&1?0:-1;
+  return [-1,0,dx,-1,dx+1,-1,1,0,dx+1,1,dx,1];
+}
+function _drawborder16(x,y) {
+  var xy=_points16(x,y),b=_border16(x,y),i,i2;
+  for(i=0,i2=10;i<12;i2=i,i+=2)
+    if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
+}
+/*function _drawborder6old(x,y) {
+  var xy=_points16(x,y),dx=y&1?0:-1;
   if(!_xo(board[y][x-1])) _line(xy[0],xy[1],xy[10],xy[11]);
-  if(!_xo(board[y][x+1])) _line(xy[4],xy[5],xy[6],xy[7]);
   if(!_xo(board[y-1][x+dx])) _line(xy[0],xy[1],xy[2],xy[3]);
   if(!_xo(board[y-1][x+dx+1])) _line(xy[2],xy[3],xy[4],xy[5]);
-  if(!_xo(board[y+1][x+dx])) _line(xy[8],xy[9],xy[10],xy[11]);
+  if(!_xo(board[y][x+1])) _line(xy[4],xy[5],xy[6],xy[7]);
   if(!_xo(board[y+1][x+dx+1])) _line(xy[6],xy[7],xy[8],xy[9]);
-}
+  if(!_xo(board[y+1][x+dx])) _line(xy[8],xy[9],xy[10],xy[11]);
+}*/
 
 function _drawborder3(x,y) {
   var xy=_points3(x,y),dy=1^(y&1)^(x&1)?-1:1;
@@ -1016,9 +1030,9 @@ function _drawboard() {
   for(y=0;y<ny;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
       if((c=b[x])!=' ') {
-        penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell6x(x,y):_drawcell(x,y);
+        penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell16(x,y):_drawcell(x,y);
         if((w=c=='w')||c=='o') {
-          n+=onoff?c=='o':c=='o'||w,penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg6(x,y,w,p):_drawpeg(x,y,w,p);
+          n+=onoff?c=='o':c=='o'||w,penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg16(x,y,w,p):_drawpeg(x,y,w,p);
           m+=onoff?c=='o':+_can(x,y,0,1)+_can(x,y,0,-1)+_can(x,y,1,0)+_can(x,y,-1,0)+(diag?_can(x,y,1,-1)+_can(x,y,1,1)+_can(x,y,-1,-1)+_can(x,y,-1,1):0);
         }
       }
@@ -1026,7 +1040,7 @@ function _drawboard() {
   for(y=1;y<ny;y++)
     for(x=1;x<nx;x++)
       if((c=board[y][x])!=' ') 
-        penta?_drawborder15(x,y):tria4?_drawborder5(x,y):tria2?_drawborder2(x,y):tria?_drawborder3(x,y):hexa?_drawborder6(x,y):_drawborder(x,y);
+        penta?_drawborder15(x,y):tria4?_drawborder5(x,y):tria2?_drawborder2(x,y):tria?_drawborder3(x,y):hexa?_drawborder16(x,y):_drawborder(x,y);
   _pegs(n);
   for(n=0;n<sele.length;n+=2)
     _drawsele(sele[n],sele[n+1]);
@@ -1374,14 +1388,6 @@ function _switch9(x,y,mask) {
   if(b) _f2(x+1,y-1),_f2(x+1,y+1),_f2(x-1,y-1),_f2(x-1,y+1);
 }
 
-function _switch7(x,y,mask) {
-  var dx=y&1?0:-1,a=mask&2,b=mask&4,c=mask&1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
-  if(c&&onoff!=2) _f1(x,y);
-  if(a) _f2(x-1,y);if(b) _f2(x+1,y);
-  if(b) _f2(x+dx,y-1);if(a) _f2(x+dx+1,y+1);
-  if(a) _f2(x+dx+1,y-1);if(b) _f2(x+dx,y+1);
-}
-
 function _switch2(x,y) {
   var dy=(1^x^y^((x+1)>>1))&1?1:-1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
   if(onoff!=2) _f1(x,y);_f2(x,y+dy);
@@ -1411,11 +1417,37 @@ function _switch4(x,y) {
   _f2(x-1,y);_f2(x+1,y);
 }
 
+function _border14(x,y,f) {
+  return [-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1,-1,1];//:[-1,0,0,-1,1,0,0,1];
+}
+
+function _switch14(x,y,mask,d) {
+  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border14(x,y);
+  if(onoff!=2) _f1(x,y);
+  for(i=2*d,m=1;m<256;i+=i==14?-14:2,m<<=1) 
+   if(mask&m) _f2(x+b[i],y+b[i+1]);
+}
+
 function _switch15(x,y,mask,d) {
   var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border15(x,y);
   if(onoff!=2) _f1(x,y);
   for(i=2*d,m=1;m<32;i+=i==8?-8:2,m<<=1) 
    if(mask&m) _f2(x+b[i],y+b[i+1]);
+}
+
+function _switch16(x,y,mask,d) {
+  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border16(x,y);
+  if(onoff!=2) _f1(x,y);
+  for(i=2*d,m=1;m<64;i+=i==10?-10:2,m<<=1) 
+   if(mask&m) _f2(x+b[i],y+b[i+1]);
+}
+
+function _switch16old(x,y,mask) {
+  var dx=y&1?0:-1,a=mask&2,b=mask&4,c=mask&1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
+  if(c&&onoff!=2) _f1(x,y);
+  if(a) _f2(x-1,y);if(b) _f2(x+1,y);
+  if(b) _f2(x+dx,y-1);if(a) _f2(x+dx+1,y+1);
+  if(a) _f2(x+dx+1,y-1);if(b) _f2(x+dx,y+1);
 }
 
 function _mup(e) {
@@ -1433,10 +1465,11 @@ function _mup(e) {
   if(onoff) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
-      var mc=mxy[4],p=0,p2,p3;
-      penta?(p=15,_switch15(lx,ly,p2=13,p3=_idx(mxy[5],mxy[6],_points15(lx,ly))))
-        :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)):tria?(p=4,_switch4(lx,ly)):hexa?_switch7(lx,ly,p=mc&1?5:3)
-        :_switch9(lx,ly,p=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?13:11);
+      var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
+      penta?(p=15,_switch15(lx,ly,p2=x6==2?19:x6==1?13:31,p3=_idx(mxy[5],mxy[6],_points15(lx,ly))))
+        :hexa?(p=16,_switch16(lx,ly,p2=x6==2?35:x6==1?21:63,p3=_idx(mxy[5],mxy[6],_points16(lx,ly))))
+        :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)):tria?(p=4,_switch4(lx,ly)) //:hexa?_switch16(lx,ly,p=mc&1?5:3)
+        :p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:x6==2?69:x6==1?85:255,p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly)));
       undo.length=redo;undo[redo++]=[lx,ly,p,p2,p3];
       _moves(1);
       _drawboard();
@@ -1647,7 +1680,9 @@ function _undo(n) {
     while(redo&&n--) {
       var u=undo[--redo],px=u[0],py=u[1],dx=u[2],dy=u[3],m=-1;
       if(u.length==5) {
-        u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py):u[2]==3||u[2]==5?_switch7(px,py,u[2]):_switch9(px,py,u[2]);
+        u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
+        :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
+        :_switch14(px,py,u[3],u[4]);
       } else if(dx||dy) {
 	var qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
 	board[py][px]=u[4],board[qy][qx]=u[5],board[ry][rx]='x';
@@ -1663,7 +1698,10 @@ function _redo(n) {
   if(n<1) n=1;
   while(redo<undo.length&&n--) {
     var u=undo[redo++],px=u[0],py=u[1],dx=u[2],dy=u[3],m=1;
-    if(u.length==5) u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py):u[2]==3||u[2]==5?_switch7(px,py,u[2]):_switch9(px,py,u[2]);
+    if(u.length==5) 
+       u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
+       :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
+       :_switch14(px,py,u[3],u[4]);
     else if(dx||dy) {
       var qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
       board[py][px]=board[qy][qx]='x',board[ry][rx]=u[4];
