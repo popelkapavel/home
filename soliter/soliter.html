@@ -38,6 +38,8 @@
 <option value=0 >*</option>
 <option value=1 selected >&#x25b3</option>
 <option value=2 >&#x2312</option>
+<option value=3 >X</option>
+<option value=4 >-</option>
 </select>
 |
 <input name=hexa type=radio checked value=4 title=squares />
@@ -1466,10 +1468,10 @@ function _mup(e) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
-      penta?(p=15,_switch15(lx,ly,p2=x6==2?19:x6==1?13:31,p3=_idx(mxy[5],mxy[6],_points15(lx,ly))))
-        :hexa?(p=16,_switch16(lx,ly,p2=x6==2?35:x6==1?21:63,p3=_idx(mxy[5],mxy[6],_points16(lx,ly))))
+      penta?(p=15,_switch15(lx,ly,p2=x6==4?18:x6==3?30:x6==2?19:x6==1?13:31,p3=_idx(mxy[5],mxy[6],_points15(lx,ly))))
+        :hexa?(p=16,_switch16(lx,ly,p2=x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63,p3=_idx(mxy[5],mxy[6],_points16(lx,ly))))
         :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)):tria?(p=4,_switch4(lx,ly)) //:hexa?_switch16(lx,ly,p=mc&1?5:3)
-        :p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:x6==2?69:x6==1?85:255,p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly)));
+        :(p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:x6==4?68:x6==3?187:x6==2?69:x6==1?85:255,p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly))));
       undo.length=redo;undo[redo++]=[lx,ly,p,p2,p3];
       _moves(1);
       _drawboard();
