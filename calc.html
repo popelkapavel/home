@@ -6,20 +6,25 @@ y:<input name=ymin value=-1 />..<input name=ymax value=1 />
 z:<input name=zmin value=-1 />..<input name=zmax value=1 />
 <br>
 <input type=button onclick=recalc() value=draw />
-<input type=button onclick=recalc2d() value="draw 2D" />
 t: <input type=checkbox name=play />
+, <input type=checkbox name=comma />
   <input size=20 name=speed value='1.0' />
-2D n: <input size=2 name=nd2 value='48' /> saw:<input size=2 name=saw value='0' /><input type=checkbox name=sawm checked />
-<br>&#x222b;<input type=checkbox name=ai />&#x2202;<input type=checkbox name=ad />
+2D <input type=button onclick=recalc2d() value="draw 2D" />
+<input type=checkbox name=rgb tooltip="RGB mode" />
+ n: <input size=2 name=nd2 value='48' /> saw:<input size=2 name=saw value='0' /><input type=checkbox name=sawm checked />
+<br>&#x222b;<input tabindex=8 type=checkbox name=ai />&#x2202;<input tabindex=9 type=checkbox name=ad />
   <span style='color:#cc0000;'>a: </span><input size=100 name=func value='x*x-1' /><input size=50 name=stat tabindex=-1 />
 
-<br>&#x222b;<input type=checkbox name=bi />&#x2202;<input type=checkbox name=bd />
+<br>&#x222b;<input tabindex=8 type=checkbox name=bi />&#x2202;<input tabindex=9 type=checkbox name=bd />
   <span style='color:#0000ff;'>b: </span><input size=100 name=func2 value='1-x*x' /><input size=50 name=stat2  tabindex=-1 />
-<br>&#x222b;<input type=checkbox name=ci />&#x2202;<input type=checkbox name=cd />
-  <span style='color:#000000;'>c: </span><input size=100 name=func3 value='0' /><input size=50 name=stat3  tabindex=-1 />
+<br>&#x222b;<input tabindex=8 type=checkbox name=ci />&#x2202;<input tabindex=9 type=checkbox name=cd />
+  <span style='color:#008800;'>c: </span><input size=100 name=func3 value='abs(x)' /><input size=50 name=stat3  tabindex=-1 />
+<br>&#x222b;<input tabindex=8 type=checkbox name=di />&#x2202;<input tabindex=9 type=checkbox name=dd />
+  <span style='color:#000000;'>d: </span><input size=100 name=func4 value='0' /><input size=50 name=stat4  tabindex=-1 />
 <br>
 
 <canvas id="cv1" width="1024" height="768" style="border:1px solid black;"></canvas>
+<textarea rows=10 cols=160 name=txt ></textarea>
 
 <script type="text/javascript">
 var cv1=document.getElementById("cv1");
@@ -51,6 +56,14 @@ function diam(x,y) { return Math.abs(x)+Math.abs(y);}
 function squa(x,y) { return Math.max(Math.abs(x),Math.abs(y));}
 function sqr1(x) { x=1-x;return 1-x*x;}
 function sqr2(x,y,z) { return x*x+y*y;}
+function cam(x,c,a,m) { 
+  if(x>c) {
+    var d=x-c;
+    if(isFinite(m)) x=c+m*d;
+    if(isFinite(a)) x+=a;
+  }
+  return x;
+}
 function sqrl(x,y,x1,y1,x2,y2) {
   var dx=x2-x1,dy=y2-y1,ax,ay,a,d=dx*dx+dy*dy;
   ax=x-x1,ay=y-y1;
@@ -60,6 +73,21 @@ function sqrl(x,y,x1,y1,x2,y2) {
   a=ax*dy-ay*dx;
   return a*a/d;
 }
+function fact(x) {
+  x|=0;
+  if(x<=1) return 1;
+  var f=2,i=3;
+  while(i<=x) f*=i++;
+  return f;
+}
+function bin(a,b) {
+  a|=0,b|=0;
+  if(a<1||b<2||a>=b) return 1;
+  if(a>b/2) a=b-a;
+  r=b;
+  for(j=2;j<=a;j++) r=r*--b/j;
+  return r;
+}
 function idx(i,a,b,c,d,e,f,g,h) { return i<4?i<2?i?b:a:i<3?c:d:i<6?i<5?e:f:i<7?g:h;}
 function round2(x,y) { 
   if(y>0) {
@@ -68,6 +96,11 @@ function round2(x,y) {
   } else
     return Math.round(x);
 }
+function r2(x,d) {
+  var r=''+(isFinite(d)?round2(x,d):r);
+  return f.comma.checked?r.replace('.',','):r;
+}
+
 function int(x) { return (1.0*x).toFixed(0);}
 function bitcount(x) {
   var c=0,i=x&65535,j=(x>>16)&65535;
@@ -86,27 +119,30 @@ function recalc() {
   var j,i,x,y,w=cv1.width,h=cv1.height;
   var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx;
   var t=ft();
-  var g,a2=/\ba\b/.test(f.func2.value),a3=/\ba\b/.test(f.func3.value),a=a2||a3?[]:0;
-  var b=/\bb\b/.test(f.func3.value)?[]:0,ab=a||b;
-  var ji,jd,dd=w/(xa-xi),l,y1,y2,max,may,mix,miy,zx,zy;
+  var g,a2=/\ba\b/.test(f.func2.value),a3=/\ba\b/.test(f.func3.value),a4=/\ba\b/.test(f.func4.value),a=a2||a3||a4?[]:0;
+  var b3=/\bb\b/.test(f.func3.value),b4=/\bb\b/.test(f.func4.value),b=b3||b4?[]:0;
+  var c4=/\bc\b/.test(f.func4.value),c=c4?[]:0,ab=a||b||c;
+  var ji,jd,dd=w/(xa-xi),l,y1,y2,max,may,mix,miy,zx,zy,ra,r;
   rec=0;
   ctx.lineWidth=2;
   ctx.fillStyle=grd;
   ctx.fillRect(0,0,cv1.width,cv1.height);
-  for(j=0;j<3;j++) {
-    fx=xreplace([f.func,f.func2,f.func3][j].value)
+  f.txt.value='';
+  for(j=0;j<4;j++) {
+    fx=xreplace([f.func,f.func2,f.func3,f.func4][j].value)
     fx=fx.replace(/\bt\b/g,'('+t+')')
     ctx.beginPath();
-    ctx.strokeStyle=['red','blue','black'][j];
-    y2=undefined,l=0;
-    ji=[f.ai,f.bi,f.ci][j].checked,jd=[f.ad,f.bd,f.cd][j].checked;
-    miy=may=zy=NaN;
+    ctx.strokeStyle=['red','blue','green','black'][j];
+    y2=undefined,x2=y2,l=0;
+    ji=[f.ai,f.bi,f.ci,f.cd][j].checked,jd=[f.ad,f.bd,f.cd,f.dd][j].checked;
+    miy=may=zy=NaN,ra=[];
     for(i=0;i<w;i++) {
        x=xi+i*(xa-xi)/(w-1);
        g=fx;
        if(ab) {
-         if(j==1&&a2||j==2&&a3) g=g.replace(/\ba\b/g,'('+a[i]+')');
-         if(j==2&&b) g=g.replace(/\bb\b/g,'('+b[i]+')');
+         if(j==1&&a2||j==2&&a3||j==3&&a4) g=g.replace(/\ba\b/g,'('+a[i]+')');
+         if(j==2&&b3||j==3&&b4) g=g.replace(/\bb\b/g,'('+b[i]+')');
+         if(j==3&&c4) g=g.replace(/\bc\b/g,'('+c[i]+')');
        }
        y=y1=eval(g.replace(/\bx\b/g,'('+x+')'));
        if(ji) y=l+=i?y1/dd:0;
@@ -114,15 +150,24 @@ function recalc() {
        if(isNaN(may)||y>may) may=y,max=x;
        if(isNaN(miy)||y<miy) miy=y,mix=x;
        if(isNaN(zy)||Math.abs(y)<zy) zy=Math.abs(y),zx=x;
-       y2=y1;
+       if(i&&y2<0==y>0&&ra.length<3&&y!=y2) {r=x2-(x-x2)*y2/(y-y2);if(isFinite(r)) ra.push(r);}
+       y2=y1,x2=x;
        if(ab) {
          if(a&&!j) a.push(y);
          if(b&&j==1) b.push(y);
+         if(c&&j==2) c.push(y);
        }
        ctx.lineTo(i,(ya-y)*h/(ya-yi));
     }
-    [f.stat,f.stat2,f.stat3][j].value='min: '+round2(miy,6)+'@'+round2(mix,6)+' max: '+round2(may,6)+'@'+round2(max,6)+' zero: '+round2(zy,6)+'@'+round2(zx,6);
+    var s=[r2(miy,6),r2(mix,6),r2(may,6),r2(max,6),r2(zy,6),r2(zx,6)];
+    [f.stat,f.stat2,f.stat3,f.stat4][j].value='min: '+s[0]+'@'+s[1]+' max: '+s[2]+'@'+s[3]+' zero: '+s[4]+'@'+s[5];
     ctx.stroke();   
+    f.txt.value+=fx+'\t'+s[0]+'\t'+s[1]+'\t'+s[2]+'\t'+s[3]+'\t'+s[4]+'\t'+s[5]+'\n';
+    if(ra.length>0) {
+      var txt='root';
+      for(i in ra) txt+='\t'+r2(ra[i],6);
+      f.txt.value+=txt+'\n';
+    }
   }
   // ctx.fillStyle="red";
   // ctx.fill();
@@ -135,6 +180,12 @@ function cmix(a,b,r) {
     var s=1-r;
     return (s*a0+r*b0)|((s*a1+r*b1)<<8)|((s*a2+r*b2)<<16);
   } else return r>0.5?b:a;
+}
+function crgb(r,g,b) {
+  r=r<=0?0:r>=1?255:r*255;
+  g=g<=0?0:g>=1?255:g*255;
+  b=b<=0?0:b>=1?255:b*255;
+  return (r<<16)|(g<<8)|b;
 }
 
 function cstyle(x) {
@@ -151,27 +202,46 @@ function saw(x,n,m) {
 
 function recalc2d() {
   var j,i,x=[],y=[],w=cv1.width,h=cv1.height,fx,n=f.nd2.value*1,t=ft(),wn=w/n,hn=h/n;
-  var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx,fy;
+  var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx,fy,fx2,fy2,fx3,fy3;
   var zi=xeval(f.zmin.value),za=xeval(f.zmax.value);
-  var sw=f.saw.value*1,swm=f.sawm.checked;
-  var min=Infinity,max=-Infinity,mii,mij,mai,maj;
+  var sw=f.saw.value*1,swm=f.sawm.checked,rgb=f.rgb.checked,c,z,z2,z3;
+  var min=Infinity,max=-Infinity,mii,mij,mai,maj,sep=f.comma.checked?';':',';
   rec=2;
-  fx=xreplace(f.func.value);
-  fx=fx.replace(/\bt\b/g,'('+t+')');
+  fx=xreplace(f.func.value);fx=fx.replace(/\bt\b/g,'('+t+')');
+  fx2=xreplace(f.func2.value);fx2=fx2.replace(/\bt\b/g,'('+t+')');
+  fx3=xreplace(f.func3.value);fx3=fx3.replace(/\bt\b/g,'('+t+')');
   for(i=0;i<n;i++) { x.push(xi+i*(xa-xi)/(n-1));y.push(yi+i*(ya-yi)/(n-1));}
   for(i=0;i<n;i++) {
     fy=fx.replace(/\bx\b/g,'('+x[i]+')');
+    if(rgb) {
+      fy2=fx2.replace(/\bx\b/g,'('+x[i]+')');
+      fy3=fx3.replace(/\bx\b/g,'('+x[i]+')');
+    }
     for(j=0;j<n;j++) {
       z=eval(fy.replace(/\by\b/g,'('+y[j]+')'));
       if(z<min) min=z,mii=i,mij=j;else if(z>max) max=z,mai=i,maj=j;
       z=(z-zi)/(za-zi);
       if(sw) z=saw(z,sw,swm);
-      ctx.fillStyle=cstyle(z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1));
+      if(rgb) {
+        if(fy2) {
+          z2=eval(fy2.replace(/\by\b/g,'('+y[j]+')'));
+          z2=(z2-zi)/(za-zi);
+          if(sw) z=saw(z2,sw,swm);
+        } else z2=0;
+        if(fy3) {
+          z3=eval(fy3.replace(/\by\b/g,'('+y[j]+')'));
+          z3=(z3-zi)/(za-zi);
+          if(sw) z=saw(z3,sw,swm);
+        } else z3=0;
+        c=crgb(z,z3,z2);
+      } else
+        c=z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1);
+      ctx.fillStyle=cstyle(c);
       ctx.fillRect(i*w/n,j*h/n,wn,hn);
     }
   }
-  f.stat.value='min: '+round2(min,6)+'@'+round2(x[mii],6)+','+round2(y[mij],6);
-  f.stat2.value='max: '+round2(max,6)+'@'+round2(x[mai],6)+','+round2(y[maj],6);
+  f.stat.value='min: '+r2(min,6)+'@'+r2(x[mii],6)+sep+r2(y[mij],6);
+  f.stat2.value='max: '+r2(max,6)+'@'+r2(x[mai],6)+sep+r2(y[maj],6);
 }
 
 function recalc1() {
