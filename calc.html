@@ -36,12 +36,13 @@ grd.addColorStop(1, "#DDEEFF");
 
 function xreplace(fx) {   
   //fx=fx.replace(',','.');//.replace(/\bpi\b/g,'Math.PI').replace(/\be\b/g,'Math.E');
-  fx=fx.replace(/\b(atan|atan2|sin|cos|asin|acos|sinh|cosh|asinh|acosh|pow|log|exp|sqrt|abs|ceil|floor|min|max)\b/gi,'Math.$1');
+  fx=fx.replace(/\b(sign|atan|atan2|sin|cos|asin|acos|sinh|cosh|asinh|acosh|pow|log|log10|exp|sqrt|abs|ceil|floor|min|max)\b/gi,'Math.$1');
   return fx;
 }
 
 var pi=Math.PI,e=Math.E,ln10=Math.LN10;
 function sig(x) { return x<0.5?2*x*x:1-2*(1-x)*(1-x);}
+function log2(x,y) { return Math.log(Math.abs(x))/Math.log(y);}
 function pro(x,y) { return x/(x+y);}
 function avg(x,y,z) { return z<1/0?z*x+(1-z)*y:(x+y)/2;}
 function sgn(x) { return x<0?-1:x>0?1:0;}
@@ -114,6 +115,19 @@ function ft() {
   return Math.abs(new Date().getTime()%(2*s)-s)/s;
 }
 
+function root(g,x,y,x2,y2) {
+  r=x2-(x-x2)*y2/(y-y2);
+  if(isFinite(r)&&r!=y&&r!=y2) {
+    var yr=eval(g.replace(/\bx\b/g,'('+r+')')),x3,y3,d3,x4,y4;
+    if(Math.sign(y)==Math.sign(yr)) x3=x2,y3=y2;else x3=x,y3=y;
+    d=(x3-r)*Math.abs(yr)/(y3-yr);
+    x4=r+3*d,y4=eval(g.replace(/\bx\b/g,'('+x4+')'));
+    if(Math.sign(y4)==Math.sign(y3)) d=(x4-r)*Math.abs(yr)/(y4-yr);
+    r+=d;
+  }
+  return r;
+}
+
 var rec;
 function recalc() {
   var j,i,x,y,w=cv1.width,h=cv1.height;
@@ -150,7 +164,11 @@ function recalc() {
        if(isNaN(may)||y>may) may=y,max=x;
        if(isNaN(miy)||y<miy) miy=y,mix=x;
        if(isNaN(zy)||Math.abs(y)<zy) zy=Math.abs(y),zx=x;
-       if(i&&y2<0==y>0&&ra.length<3&&y!=y2) {r=x2-(x-x2)*y2/(y-y2);if(isFinite(r)) ra.push(r);}
+       if(y==0&&(y2<0||y2>0)) ra.push(x);
+       else if(i&&(y2<0)==(y>0)&&y2!=0&&y!=0&&ra.length<5&&y!=y2) {
+         r=root(g,x,y,x2,y2);
+         if(isFinite(r)) ra.push(r);
+       } 
        y2=y1,x2=x;
        if(ab) {
          if(a&&!j) a.push(y);
@@ -165,7 +183,7 @@ function recalc() {
     f.txt.value+=fx+'\t'+s[0]+'\t'+s[1]+'\t'+s[2]+'\t'+s[3]+'\t'+s[4]+'\t'+s[5]+'\n';
     if(ra.length>0) {
       var txt='root';
-      for(i in ra) txt+='\t'+r2(ra[i],6);
+      for(i in ra) txt+='\t'+r2(ra[i],9);
       f.txt.value+=txt+'\n';
     }
   }

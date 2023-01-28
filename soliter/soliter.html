@@ -40,6 +40,10 @@
 <option value=2 >&#x2312</option>
 <option value=3 >X</option>
 <option value=4 >-</option>
+<option value=6 >^</option>
+<option value=7 >T</option>
+<option value=8 >S</option>
+<option value=9 >]</option>
 </select>
 |
 <input name=hexa type=radio checked value=4 title=squares />
@@ -759,16 +763,20 @@ function _points15(x,y) {
 }
 
 function _sqr(x,y) { return x*x+y*y;}
-function _idx(ex,ey,xy) {
-  var i=0,d,f=0,m=1/0,n=xy.length,x=xy[n-2],y=xy[n-1],x2,y2;
+function _idx(ex,ey,xy,v) {
+  var i=0,d,f=0,m=1/0,n=xy.length,x=xy[n-2],y=xy[n-1],x2,y2,v2=v>1;
   ex*=2,ey*=2;
   while(i<n) {
     x2=x,y2=y,x=xy[i++],y=xy[i++];
-    x2+=x,y2+=y;
+    if(v2) {
+       var x3=(3*x2+x)/2,y3=(3*y2+y)/2;
+       if((d=_sqr(x3-ex,y3-ey))<m) f=i|64,m=d;
+       x2=(3*x+x2)/2,y2=(3*y+y2)/2;
+    } else if(v) x2=2*x,y2=2*y;else x2+=x,y2+=y;
     if((d=_sqr(x2-ex,y2-ey))<m) f=i,m=d;
   }
-  console.log('_idx',[(f>>1)-1,m]);
-  return (f>>1)-1;
+  //console.log('_idx',[(f>>1)-1,m]);
+  return (((f&63)>>1)-1)|(f&64);
 }
 
 function _drawcell16(x,y) {
@@ -790,7 +798,7 @@ function _drawcell16(x,y) {
 
 function _points3(x,y) {
   var d=1^(y&1)^(x&1),dy=d?-1:1,sx=brd+x*cell3x/2,sy=brd+(y+d)*cell3y,y2=sy+dy*cell3y;
-  return [sx,sy,sx+cell3x/2,y2,sx+cell3x,sy];
+  return d?[sx,sy,sx+cell3x/2,y2,sx+cell3x,sy]:[sx+cell3x,sy,sx+cell3x/2,y2,sx,sy];
 }
 
 function _drawcell6y(x,y) {
@@ -989,9 +997,9 @@ function _drawborder16(x,y) {
 }*/
 
 function _drawborder3(x,y) {
-  var xy=_points3(x,y),dy=1^(y&1)^(x&1)?-1:1;
-  if(!_xo(board[y][x-1])) _line(xy[0],xy[1],xy[2],xy[3]);
-  if(!_xo(board[y][x+1])) _line(xy[2],xy[3],xy[4],xy[5]);
+  var xy=_points3(x,y),d=1^(y&1)^(x&1),dy=d?-1:1,i,j;
+  if(!_xo(board[y][x-1])) d?(i=0,j=2):(i=2,j=4),_line(xy[i],xy[i+1],xy[j],xy[j+1]);
+  if(!_xo(board[y][x+1])) d?(i=2,j=4):(i=0,j=2),_line(xy[i],xy[i+1],xy[j],xy[j+1]);
   if(!_xo(board[y-dy][x])) _line(xy[4],xy[5],xy[0],xy[1]);
 }
 
@@ -1439,6 +1447,19 @@ function _switch4(x,y) {
   _f2(x-1,y);_f2(x+1,y);
 }
 
+function _border13(x,y,f) {
+  var d=1^(y&1)^(x&1);
+  return d?[0,1,1,1,-1,1,-2,1,-3,1 ,-1,0,-2,0,-1,-1,0,-1,0,-2 ,1,0,1,-1,2,0,2,1,3,1 ]
+   :[0,-1,-1,-1,1,-1,2,-1,3,-1 ,1,0,2,0,1,1,0,1,0,2 ,-1,0,-1,1,-2,0,-2,-1,-3,-1 ]
+}
+
+function _switch3(x,y,mask,d) {
+  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border13(x,y);
+  if(onoff!=2) _f1(x,y);
+  for(i=2*d,m=1;m<32768;i+=i==28?-28:2,m<<=1) 
+   if(mask&m) _f2(x+b[i],y+b[i+1]);
+}
+
 function _border14(x,y,f) {
   return [-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1,-1,1];//:[-1,0,0,-1,1,0,0,1];
 }
@@ -1472,6 +1493,13 @@ function _switch16old(x,y,mask) {
   if(a) _f2(x+dx+1,y-1);if(b) _f2(x+dx,y+1);
 }
 
+function _mask(x6) {
+  if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
+  if(penta) return x6==6?23:x6==4?18:x6==3?30:x6==2?19:x6==1?13:31;
+  if(tria) return x6==7?31:x6==6?5+96+1024:x6==4?32+1024:x6==3?3+96+3072:x6==2?15+8192:x6==1?1057:15855;
+  return x6==9?192|6:x6==7?131+16:x6==6?119:x6==4?17:x6==3?187:x6==2?69:x6==1?85:255;
+}
+
 function _mup(e) {
   mm1=0;
   e.preventDefault();
@@ -1488,10 +1516,16 @@ function _mup(e) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
-      penta?(p=15,_switch15(lx,ly,p2=x6==4?18:x6==3?30:x6==2?19:x6==1?13:31,p3=_idx(mxy[5],mxy[6],_points15(lx,ly))))
-        :hexa?(p=16,_switch16(lx,ly,p2=x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63,p3=_idx(mxy[5],mxy[6],_points16(lx,ly))))
-        :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)):tria?(p=4,_switch4(lx,ly)) //:hexa?_switch16(lx,ly,p=mc&1?5:3)
-        :(p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:x6==4?17:x6==3?187:x6==2?69:x6==1?85:255,p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly))));
+      if((x6==8)&&(hexa||!(penta|tria4|tria2|tria))) {
+        var ix=_idx(mxy[5],mxy[6],(hexa?_points16:_points14)(lx,ly),2),s=ix&64;
+        p3=(hexa?1:2)*(ix&63);
+        hexa?(p=16,_switch16(lx,ly,p2=s?41:11,p3)):(p=13,_switch14(lx,ly,p2=s?129|24:3|48,p3));
+      } else 
+        penta?(p=15,_switch15(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points15(lx,ly),x6>=6)))
+        :hexa?(p=16,_switch16(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
+        :tria?(p=4,_switch3(lx,ly,p2=_mask(x6),p3=5*_idx(mxy[5],mxy[6],_points3(lx,ly),x6==6))) //tria?(p=4,_switch4(lx,ly))
+        :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)) //:hexa?_switch16(lx,ly,p=mc&1?5:3)
+        :(p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:_mask(x6),p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly),x6==6)));
       undo.length=redo;undo[redo++]=[lx,ly,p,p2,p3];
       _moves(1);
       _drawboard();
