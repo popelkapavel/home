@@ -122,6 +122,7 @@ pegs:<span style="font-size:18px;font-weight:bold;" id=pegs>0</span>
 moves:<span style="font-size:18px;font-weight:bold;" id=moves>0</span><input style=margin-left:2px; type=button onclick=_moves(-moves); value=x /> 
 |
 <input name=peg type=checkbox onclick=_drawboard() title="polygon peg"/>
+<input name=rou type=checkbox onclick="window.rou=+f.rou.checked;_drawboard()" title="rounded cell"/>
 
 </td>
 </tr>
@@ -224,7 +225,7 @@ var ctx=cv1.getContext("2d");
 var grd,mp,mm,mm1,drawms,tdraw,design;
 
 var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,cell6x=40,cell6y=Math.round(cell6x*Math.sqrt(3)/2);
-var onoff=0,diag=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,white=0;
+var onoff=0,diag=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,white=0,rou=0;
 var cell3x=48,cell3y=Math.round(cell3x*Math.sqrt(3)/2);
 var clr2=['#feb','#db9','#a86'],clr3=['#bbf','#fbb','#ffb'],clr4=['#ffc','#c88','#88c','#cff'];
 var board,undo,redo,moves=0,sele=[];
@@ -691,13 +692,29 @@ function _alloc(w,h) {
   }
 }
 
+function _brd(x,y) { var b=board[y];return b?(b=b[x],b&&b!=' '):0;}
 function _drawcell(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell;
   ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[x&1]:mono==21?clr2[y&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr3[(x+9999-y)%3]:mono==31?clr3[(x+y)%3]:'#ffffff';
-  ctx.fillRect(sx,sy,cell,cell);
-  ctx.lineWidth=0.5;
-  ctx.rect(sx,sy,cell,cell);
-  ctx.stroke();
+  if(rou) {
+    var c2=cell/2,cx=sx+c2,cy=sy+c2,b=[_brd(x-1,y),_brd(x,y-1),_brd(x+1,y),_brd(x,y+1)];
+    ctx.beginPath();
+    ctx.arc(sx+c2,sy+c2,c2+1,0,2*Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    if(b[0]||b[1]) ctx.fillRect(sx,sy,c2,c2);
+    if(b[1]||b[2]) ctx.fillRect(sx+c2,sy,c2,c2);
+    if(b[2]||b[3]) ctx.fillRect(sx+c2,sy+c2,c2,c2);
+    if(b[3]||b[0]) ctx.fillRect(sx,sy+c2,c2,c2);
+    ctx.lineWidth=0.5;
+    if(b[0]) _rline(sx,sy,0,cell);
+    if(b[1]) _rline(sx,sy,cell,0);
+  } else {
+    ctx.fillRect(sx,sy,cell,cell);
+    ctx.lineWidth=0.5;
+    ctx.rect(sx,sy,cell,cell);
+    ctx.stroke();
+  }
 }
 
 function _drawsele(x,y) {
@@ -968,13 +985,38 @@ function _line(x,y,x2,y2) {
     ctx.lineTo(x2,y2);
     ctx.stroke();
 }
+function _rline(x,y,dx,dy) { _line(x,y,x+dx,y+dy);}
+function _arc(x,y,r,a,d) { 
+  var b=a+d;
+  ctx.beginPath();
+  ctx.arc(x,y,r,Math.PI*a/180,Math.PI*b/180);
+  ctx.stroke();
+}
 
 function _drawborder(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell,c2=cell/2;
-  if(!_xo(board[y][x-1])) _line(sx,sy,sx,sy+cell);
-  if(!_xo(board[y-1][x])) _line(sx,sy,sx+cell,sy);
-  if(!_xo(board[y][x+1])) _line(sx+cell,sy,sx+cell,sy+cell);
-  if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
+  if(rou) {
+    var c2=cell/2,cx=sx+c2,cy=sy+c2,b=[_brd(x-1,y),_brd(x,y-1),_brd(x+1,y),_brd(x,y+1)];
+    if(!b[0]) {
+      if(b[1]) _rline(sx,sy,0,c2+1);else _arc(cx,cy,c2,180,90);
+      if(b[3]) _rline(sx,sy+c2,0,c2);else _arc(cx,cy,c2,90,90);
+    } else {
+      if(!b[1]) _rline(sx,sy,c2,0);
+      if(!b[3]) _rline(sx,sy+cell,c2+1,0);
+    }
+    if(!b[2]) {
+      if(b[1]) _rline(sx+cell,sy,0,c2);else _arc(cx,cy,c2,270,90);
+      if(b[3]) _rline(sx+cell,sy+c2-1,0,c2+1);else _arc(cx,cy,c2,0,90);
+    } else {
+      if(!b[1]) _rline(sx+c2-1,sy,c2+1,0);
+      if(!b[3]) _rline(sx+c2,sy+cell,c2,0);
+    }
+  } else {
+    if(!_xo(board[y][x-1])) _line(sx,sy,sx,sy+cell);
+    if(!_xo(board[y-1][x])) _line(sx,sy,sx+cell,sy);
+    if(!_xo(board[y][x+1])) _line(sx+cell,sy,sx+cell,sy+cell);
+    if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
+  }
 }
 
 function _border16(x,y) {
@@ -1039,6 +1081,7 @@ function _drawboard() {
   var n,m,b,x,xe,y,c,nx=board[0].length-1,ny=board.length-1,w,ms=+new Date(),p=f.peg.checked;
   n=m=0,_clear();
   ctx.strokeStyle='#000';
+  if(rou) ctx.lineJoin='round';
   for(y=0;y<ny;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
       if((c=b[x])!=' ') {
@@ -1418,8 +1461,9 @@ function _switch9(x,y,mask) {
   if(b) _f2(x+1,y-1),_f2(x+1,y+1),_f2(x-1,y-1),_f2(x-1,y+1);
 }
 
-function _switch2(x,y) {
-  var dy=(1^x^y^((x+1)>>1))&1?1:-1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
+function _switch2(x,y,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var dy=(1^x^y^((x+1)>>1))&1?1:-1,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
   if(onoff!=2) _f1(x,y);_f2(x,y+dy);
   _f2(x-1,y);_f2(x+1,y);
 }
@@ -1432,8 +1476,9 @@ function _border5(x,y) {
   else return [-1,1,1,0,0,1];
 }
 
-function _switch5(x,y) {
-  var r=(((1^y)&1)<<1)|(1^x&1),_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
+function _switch5(x,y,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var r=(((1^y)&1)<<1)|(1^x&1),_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
   if(onoff!=2) _f1(x,y);
   if(r==0) _f2(x-1,y+1),_f2(x+1,y),_f2(x,y+1);
   else if(r==1) _f2(x-1,y),_f2(x-1,y-1),_f2(x,y+1);
@@ -1441,22 +1486,23 @@ function _switch5(x,y) {
   else if(r==3) _f2(x-1,y),_f2(x,y-1),_f2(x+1,y-1);
 }
 
-function _switch4(x,y) {
-  var dy=1^(x&1)^(y&1)?1:-1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
+function _switch4(x,y,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var dy=1^(x&1)^(y&1)?1:-1,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
   if(onoff!=2) _f1(x,y);_f2(x,y+dy);
   _f2(x-1,y);_f2(x+1,y);
 }
 
 function _border13(x,y,f) {
   var d=1^(y&1)^(x&1);
-  return d?[0,1,1,1,-1,1,-2,1,-3,1 ,-1,0,-2,0,-1,-1,0,-1,0,-2 ,1,0,1,-1,2,0,2,1,3,1 ]
-   :[0,-1,-1,-1,1,-1,2,-1,3,-1 ,1,0,2,0,1,1,0,1,0,2 ,-1,0,-1,1,-2,0,-2,-1,-3,-1 ]
+  return d?[0,1,1,1,-1,1,-2,1,-3,1,1,2,0,2,-1,2 ,-1,0,-2,0,-1,-1,0,-1,0,-2,-3,0,-3,-1,-2,-1 ,1,0,1,-1,2,0,2,1,3,1,2,-1,3,-1,3,0 ]
+   :[0,-1,-1,-1,1,-1,2,-1,3,-1,-1,-2,0,-2,1,-2 ,1,0,2,0,1,1,0,1,0,2,3,0,3,1,2,1 ,-1,0,-1,1,-2,0,-2,-1,-3,-1,-2,1,-3,-1,-3,0 ]
 }
 
 function _switch3(x,y,mask,d) {
   var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border13(x,y);
   if(onoff!=2) _f1(x,y);
-  for(i=2*d,m=1;m<32768;i+=i==28?-28:2,m<<=1) 
+  for(i=2*d,m=1;m<0x1000000;i+=i==46?-46:2,m<<=1) 
    if(mask&m) _f2(x+b[i],y+b[i+1]);
 }
 
@@ -1464,22 +1510,25 @@ function _border14(x,y,f) {
   return [-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1,-1,1];//:[-1,0,0,-1,1,0,0,1];
 }
 
-function _switch14(x,y,mask,d) {
-  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border14(x,y);
+function _switch14(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border14(x,y);
   if(onoff!=2) _f1(x,y);
   for(i=2*d,m=1;m<256;i+=i==14?-14:2,m<<=1) 
    if(mask&m) _f2(x+b[i],y+b[i+1]);
 }
 
-function _switch15(x,y,mask,d) {
-  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border15(x,y);
+function _switch15(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border15(x,y);
   if(onoff!=2) _f1(x,y);
   for(i=2*d,m=1;m<32;i+=i==8?-8:2,m<<=1) 
    if(mask&m) _f2(x+b[i],y+b[i+1]);
 }
 
-function _switch16(x,y,mask,d) {
-  var i,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border16(x,y);
+function _switch16(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border16(x,y);
   if(onoff!=2) _f1(x,y);
   for(i=2*d,m=1;m<64;i+=i==10?-10:2,m<<=1) 
    if(mask&m) _f2(x+b[i],y+b[i+1]);
@@ -1496,7 +1545,7 @@ function _switch16old(x,y,mask) {
 function _mask(x6) {
   if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
   if(penta) return x6==6?23:x6==4?18:x6==3?30:x6==2?19:x6==1?13:31;
-  if(tria) return x6==7?31:x6==6?5+96+1024:x6==4?32+1024:x6==3?3+96+3072:x6==2?15+8192:x6==1?1057:15855;
+  if(tria) return x6==9?0xd0308:x6==7?0x8000f:x6==6?0x10305:x6==4?0x10100:x6==3?0x70707:x6==2?0xd030f:x6==1?0x10101:0xf0f0f;
   return x6==9?192|6:x6==7?131+16:x6==6?119:x6==4?17:x6==3?187:x6==2?69:x6==1?85:255;
 }
 
@@ -1516,14 +1565,14 @@ function _mup(e) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
-      if((x6==8)&&(hexa||!(penta|tria4|tria2|tria))) {
-        var ix=_idx(mxy[5],mxy[6],(hexa?_points16:_points14)(lx,ly),2),s=ix&64;
-        p3=(hexa?1:2)*(ix&63);
-        hexa?(p=16,_switch16(lx,ly,p2=s?41:11,p3)):(p=13,_switch14(lx,ly,p2=s?129|24:3|48,p3));
+      if((x6==8)&&(hexa||tria||!(penta|tria4|tria2))) {
+        var ix=_idx(mxy[5],mxy[6],(tria?_points3:hexa?_points16:_points14)(lx,ly),2),s=ix&64;
+        p3=(tria?8:hexa?1:2)*(ix&63);
+        tria?(p=4,_switch3(lx,ly,p2=s?0x30303:0x50505,p3)):hexa?(p=16,_switch16(lx,ly,p2=s?41:11,p3)):(p=13,_switch14(lx,ly,p2=s?129|24:3|48,p3));
       } else 
         penta?(p=15,_switch15(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points15(lx,ly),x6>=6)))
         :hexa?(p=16,_switch16(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
-        :tria?(p=4,_switch3(lx,ly,p2=_mask(x6),p3=5*_idx(mxy[5],mxy[6],_points3(lx,ly),x6==6))) //tria?(p=4,_switch4(lx,ly))
+        :tria?(p=4,_switch3(lx,ly,p2=_mask(x6),p3=8*_idx(mxy[5],mxy[6],_points3(lx,ly),x6==6))) //tria?(p=4,_switch4(lx,ly))
         :tria4?(p=5,_switch5(lx,ly)):tria2?(p=2,_switch2(lx,ly)) //:hexa?_switch16(lx,ly,p=mc&1?5:3)
         :(p=13,_switch14(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:_mask(x6),p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly),x6==6)));
       undo.length=redo;undo[redo++]=[lx,ly,p,p2,p3];
@@ -1736,9 +1785,9 @@ function _undo(n) {
     while(redo&&n--) {
       var u=undo[--redo],px=u[0],py=u[1],dx=u[2],dy=u[3],m=-1;
       if(u.length==5) {
-        u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
-        :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
-        :_switch14(px,py,u[3],u[4]);
+        u[2]==15?_switch15(px,py,u[3],u[4],1):u[2]==16?_switch16(px,py,u[3],u[4],1)
+        :u[2]==5?_switch5(px,py,1):u[2]==2?_switch2(px,py,1):u[2]==4?_switch4(px,py,1)
+        :_switch14(px,py,u[3],u[4],1);
       } else if(dx||dy) {
 	var qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
 	board[py][px]=u[4],board[qy][qx]=u[5],board[ry][rx]='x';
