@@ -45,6 +45,7 @@
 <option value=8 >S</option>
 <option value=9 >]</option>
 </select>
+<input name=onoffx type=checkbox onclick=onoffchg(0,0,1) title="onoff extent" />&#x2191
 |
 <input name=hexa type=radio checked value=4 title=squares />
 <svg width=20 height=20 style=vertical-align:middle onclick=_sethex(0) >
@@ -89,6 +90,15 @@
 
 </svg>
 
+<br>
+<input style=margin-bottom:2px type=button onclick=draw(1) value="&gt;text&gt;game&gt;" />
+<input type=button onclick=_undo(event.ctrlKey?10:1) value="undo &#x21a9;" />
+<input type=button onclick=_redo(event.ctrlKey?10:1) value="&#x21aa; redo" />
+pegs:<span style="font-size:18px;font-weight:bold;" id=pegs>0</span>
+moves:<span style="font-size:18px;font-weight:bold;" id=moves>0</span><input style=margin-left:2px; type=button onclick=_moves(-moves); value=x /> 
+|
+<input name=peg type=checkbox onclick=_drawboard() title="polygon peg"/>
+<input name=rou type=checkbox onclick="window.rou=+f.rou.checked;_drawboard()" title="rounded cell"/>
 |
 <input name=mono type=radio checked value=1 />
 <svg width=20 height=20 style=vertical-align:middle onclick=_setclr(0) >
@@ -114,15 +124,6 @@
 <rect x=2 y=10 width=8 height=8 stroke=black stroke-width=1 fill=#88c />
 <rect x=10 y=10 width=8 height=8 stroke=black stroke-width=1 fill=#cff />
 </svg>
-<br>
-<input style=margin-bottom:2px type=button onclick=draw(1) value="&gt;text&gt;game&gt;" />
-<input type=button onclick=_undo(event.ctrlKey?10:1) value="undo &#x21a9;" />
-<input type=button onclick=_redo(event.ctrlKey?10:1) value="&#x21aa; redo" />
-pegs:<span style="font-size:18px;font-weight:bold;" id=pegs>0</span>
-moves:<span style="font-size:18px;font-weight:bold;" id=moves>0</span><input style=margin-left:2px; type=button onclick=_moves(-moves); value=x /> 
-|
-<input name=peg type=checkbox onclick=_drawboard() title="polygon peg"/>
-<input name=rou type=checkbox onclick="window.rou=+f.rou.checked;_drawboard()" title="rounded cell"/>
 
 </td>
 </tr>
@@ -571,6 +572,7 @@ function onoffchg(dr,m) {
   if(m) f.onoff.checked=true;
   onoff=f.onoff.checked?+f.onoff2.value:0;
   diag=f.diag.checked;
+  onoffx=f.onoffx.checked;
   if(dr&&!depth)  _drawboard();
 }
 function _wx(e,x) {
@@ -760,11 +762,24 @@ function _points16(x,y) {
   return [sx,sy,x2,sy-cell6x/4,x3,sy,x3,sy+cell6x/2,x2,sy+cell6x*3/4,sx,sy+cell6x/2];
 }
 
+function _border15(x,y) {
+  var b,cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2;
+  if(v) {
+    if(x1) b=[0,1,-1,0,-2,0,1,-1,1,0,];
+    else b=[0,-1,1,0,2,0,-1,1,-1,0];
+  } else {
+    if(x1) b=[-1,0,0,-1,1,-1,2,0,1,0];
+    else b=[1,0,0,1,-1,1,-2,0,-1,0];
+  }
+  return b;
+}
+
+
 function _points15(x,y) {
   var cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2;
   if(v) {
     if(x1) 
-      return [sx,sy,sx+c2,sy+c4,sx+c2,sy+cell7-c4,sx,sy+cell7,sx-c4,sy+c2];
+      return [sx,sy+cell7,sx-c4,sy+c2,sx,sy,sx+c2,sy+c4,sx+c2,sy+cell7-c4];
     else {
       sx+=cell7;
       return [sx,sy,sx+c4,sy+c2,sx,sy+cell7,sx-c2,sy+cell7-c4,sx-c2,sy+c4];
@@ -774,7 +789,7 @@ function _points15(x,y) {
       return [sx,sy,sx+c2,sy-c4,sx+cell7,sy,sx+cell7-c4,sy+c2,sx+c4,sy+c2];
     else {
       sy+=cell7;
-      return [sx,sy,sx+c4,sy-c2,sx+cell7-c4,sy-c2,sx+cell7,sy,sx+c2,sy+c4];
+      return [sx+cell7,sy,sx+c2,sy+c4,sx,sy,sx+c4,sy-c2,sx+cell7-c4,sy-c2];
     }
   }
 }
@@ -801,15 +816,30 @@ function _drawcell16(x,y) {
   //var sx=brd+(x+(y&1)/2)*cell6y,sy=brd+((1+y*3)/4)*cell6x,x2=sx+cell6y/2,x3=sx+cell6y;
   ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[(x+2-(y&1)-(y/2)&1)&1]:mono==21?clr2[(x+(y&1)+y/2)&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#ffffff';
   ctx.beginPath();
-  ctx.moveTo(xy[0],xy[1]);
-  ctx.lineTo(xy[2],xy[3]);
-  ctx.lineTo(xy[4],xy[5]);
-  ctx.lineTo(xy[6],xy[7]);
-  ctx.lineTo(xy[8],xy[9]);
-  ctx.lineTo(xy[10],xy[11]);
-  ctx.closePath();
-  ctx.fill();
-  ctx.lineWidth=0.5;
+  if(rou) {
+    var i,i1,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr(xy[0]-cx,xy[1]-cy)),b2=_border16(x,y),b=[];
+    for(i1=i=0;i<12;i1++,i+=2) b[i1]=_brd(x+b2[i],y+b2[i+1]);
+    b.push(b[0]);
+    xy.push(xy[0],xy[1]);
+    ctx.moveTo((xy[0]+xy[10])/2,(xy[1]+xy[11])/2);
+    for(i1=i=0;i<12;i1++,i+=2) _arc2(b[i1]||b[i1+1],xy[i],xy[i+1],(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth=0.5;
+    b.push(b[0]);b.shift();
+    for(i1=i=0;i<6;i1++,i+=2) if(b[i1]) _line(xy[i],xy[i+1],xy[i+2],xy[i+3]);
+  } else {
+    ctx.moveTo(xy[0],xy[1]);
+    ctx.lineTo(xy[2],xy[3]);
+    ctx.lineTo(xy[4],xy[5]);
+    ctx.lineTo(xy[6],xy[7]);
+    ctx.lineTo(xy[8],xy[9]);
+    ctx.lineTo(xy[10],xy[11]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth=0.5;
+  }
   ctx.stroke();
 }
 
@@ -862,15 +892,30 @@ function _drawcell15(x,y) {
   var xy=_points15(x,y),cx=(x+1)/2|0,x1=x&1,v=(cx+y)&1;
   ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*v+x1]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#ffffff';
   ctx.beginPath();
-  ctx.moveTo(xy[0],xy[1]);
-  ctx.lineTo(xy[2],xy[3]);
-  ctx.lineTo(xy[4],xy[5]);
-  ctx.lineTo(xy[6],xy[7]);
-  ctx.lineTo(xy[8],xy[9]);
-  ctx.closePath();
-  ctx.fill();
-  ctx.lineWidth=0.5;
-  ctx.stroke();
+  if(rou) {
+    var i,i,b2=_border15(x,y),b=[],lx,ly,nx,ny;
+    for(i1=i=0;i<10;i1++,i+=2) b[i1]=_brd(x+b2[i],y+b2[i+1]);
+    b.push(b[0]);
+    xy.push(xy[0],xy[1]);
+    ctx.moveTo(nx=(xy[0]+xy[8])/2,ny=(xy[1]+xy[9])/2);
+    for(i1=i=0;i<10;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth=0.5;
+    b.push(b[0]);b.shift();
+    for(i1=i=0;i<10;i1++,i+=2) if(b[i1]) _line(xy[i],xy[i+1],xy[i+2],xy[i+3]);
+  } else {
+    ctx.moveTo(xy[0],xy[1]);
+    ctx.lineTo(xy[2],xy[3]);
+    ctx.lineTo(xy[4],xy[5]);
+    ctx.lineTo(xy[6],xy[7]);
+    ctx.lineTo(xy[8],xy[9]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+  }
 }
 
 function _drawpeg(x,y,wh,p) {
@@ -879,14 +924,22 @@ function _drawpeg(x,y,wh,p) {
   ctx.beginPath();
   ctx.fillStyle=wh?'#fff':'#000';
   if(p) {
-    ctx.rect(sx+4,sy+4,cell-8,cell-8);
+    if(rou) {
+      var c2=cell/2,cx=sx+c2,cy=sy+c2,d=4,r=c2-d,b=[_brd(x-1,y),_brd(x,y-1),_brd(x+1,y),_brd(x,y+1)];
+      ctx.moveTo(sx+4,sy+c2);
+      _arc2(b[0]||b[1],sx+d,sy+d,sx+c2,sy+d,r);
+      _arc2(b[1]||b[2],sx+cell-d,sy+d,sx+cell-d,sy+c2,r);
+      _arc2(b[2]||b[3],sx+cell-d,sy+cell-d,sx+c2,sy+cell-d,r);
+      _arc2(b[3]||b[0],sx+d,sy+cell-d,sx+4,sy+c2,r);
+    } else 
+      ctx.rect(sx+4,sy+4,cell-8,cell-8);
   } else
     ctx.arc(sx+c2,sy+c2,c2-3,0,2*Math.PI);
   ctx.fill();
   if(wh) ctx.stroke();
 }
 
-function _polyex(xy,e,dx,dy) {
+function _polyex2(xy,e,dx,dy) {
   var i,n,x,y,a,b;
   if(e!=1) {
     if(!dx&&!dy) dx=dy=0;
@@ -894,6 +947,12 @@ function _polyex(xy,e,dx,dy) {
     i>>=1,x/=i,y/=i;
     for(i=0;i<xy.length;i+=2) xy[i]=dx+x+e*(xy[i]-x),xy[i+1]=dy+y+e*(xy[i+1]-y);
   }
+  return xy;
+}
+
+function _polyex(xy,e,dx,dy) {
+  var i;
+  _polyex2(xy,e,dx,dy);
   ctx.beginPath();
   ctx.moveTo(xy[0],xy[1]);
   for(i=2;i<xy.length;i+=2)
@@ -905,9 +964,18 @@ function _drawpeg15(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
   ctx.fillStyle=wh?'#fff':'#000';
-  if(p) 
-    _polyex(_points15(x,y),0.75);
-  else {
+  if(p) {
+    if(rou) {
+      var xy=_polyex2(_points15(x,y),0.75),b=_border15(x,y);
+      var i,i1,o=[],lx,ly,nx,ny;
+      for(i1=i=0;i<10;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+      o.push(o[0]);xy.push(xy[0],xy[1]);
+      ctx.moveTo(nx=(xy[0]+xy[8])/2,ny=(xy[1]+xy[9])/2);
+      for(i1=i=0;i<10;i1++,i+=2)
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+    } else 
+      _polyex(_points15(x,y),0.75);
+  } else {
     var p=_peg(x,y);
     ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
   }
@@ -919,9 +987,18 @@ function _drawpeg16(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
   ctx.fillStyle=wh?'#fff':'#000';
-  if(p) 
-    _polyex(_points16(x,y),0.75);
-  else {
+  if(p) {
+    if(rou) {
+      var xy=_polyex2(_points16(x,y),0.75),b=_border16(x,y);
+      var i,i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+      for(i1=i=0;i<12;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+      o.push(o[0]);xy.push(xy[0],xy[1]);
+      ctx.moveTo((xy[0]+xy[10])/2,(xy[1]+xy[11])/2);
+      for(i1=i=0;i<12;i1++,i+=2)
+        _arc2(o[i1]||o[i1+1],xy[i],xy[i+1],(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,r);
+    } else 
+      _polyex(_points16(x,y),0.75);
+  } else {
     var p=_peg(x,y);
     ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
   }
@@ -992,6 +1069,25 @@ function _arc(x,y,r,a,d) {
   ctx.arc(x,y,r,Math.PI*a/180,Math.PI*b/180);
   ctx.stroke();
 }
+function _arc2(c,x,y,x2,y2,r) { if(c) ctx.lineTo(x,y),ctx.lineTo(x2,y2);else ctx.arcTo(x,y,x2,y2,r); }
+function _bez(x,y,x1,y1,x2,y2,r) { 
+  var x3=(x1+x2)/2,y3=(y1+y2)/2;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.bezierCurveTo((2*x1+x)/3,(2*y1+y)/3,(2*x1+x2)/3,(2*y1+y2)/3,x2,y2);
+  //ctx.bezierCurveTo(x1,y1,x1,y1,x2,y2);
+  //ctx.arcTo(x1,y1,x2,y2,r);
+  ctx.stroke();
+}
+function _bez2(c,x,y,x1,y1,x2,y2,r) { 
+  if(c) ctx.lineTo(x1,y1),ctx.lineTo(x2,y2);
+  else {
+   var x3=(x1+x2)/2,y3=(y1+y2)/2;
+   ctx.bezierCurveTo((2*x1+x)/3,(2*y1+y)/3,(2*x1+x2)/3,(2*y1+y2)/3,x2,y2);
+   //ctx.bezierCurveTo(x1,y1,x1,y1,x2,y2);
+   //ctx.arcTo(x1,y1,x2,y2,r);
+  }
+}
 
 function _drawborder(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell,c2=cell/2;
@@ -1025,7 +1121,18 @@ function _border16(x,y) {
 }
 function _drawborder16(x,y) {
   var xy=_points16(x,y),b=_border16(x,y),i,i2;
-  for(i=0,i2=10;i<12;i2=i,i+=2)
+  if(rou) {
+    var i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    for(i1=i=0;i<12;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i<12;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) a=i*30-120,_arc(cx,cy,r,a,60);
+      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else for(i=0,i2=10;i<12;i2=i,i+=2)
     if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
 }
 /*function _drawborder6old(x,y) {
@@ -1059,22 +1166,22 @@ function _drawborder5(x,y) {
   if(!_xo(board[y+(r==1||r==3?-1:1)][x+(r==2||r==3?1:-1)])) _line(xy[2],xy[3],xy[4],xy[5]);
 }
 
-function _border15(x,y) {
-  var b,cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2;
-  if(v) {
-    if(x1) b=[-2,0,1,-1,1,0,0,1,-1,0];
-    else b=[0,-1,1,0,2,0,-1,1,-1,0];
-  } else {
-    if(x1) b=[-1,0,0,-1,1,-1,2,0,1,0];
-    else b=[-1,1,-2,0,-1,0,1,0,0,1];
-  }
-  return b;
-}
-
 function _drawborder15(x,y) {
   var xy=_points15(x,y),b=_border15(x,y),i,i2;
-  for(i=0,i2=8;i<10;i2=i,i+=2)
-    if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
+  if(rou) {
+    var i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    for(i1=i=0;i<10;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i<10;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else 
+    for(i=0,i2=8;i<10;i2=i,i+=2)
+      if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
 }
 
 function _drawboard() {
@@ -1210,8 +1317,8 @@ function _drect(px,py,mx,my,c) {
 }
 function _peg(x,y) {
   if(penta) {
-    var cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2;
-    return [sx+(v?x1?c4-4:c2+c4+4:c2),sy+(v?c2:x1?c4-4:c2+c4+4),c4+2];
+    var d=4.5,cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2;
+    return [sx+(v?x1?c4-d:c2+c4+d:c2),sy+(v?c2:x1?c4-d:c2+c4+d),c4+2];
   } else if(tria2) {
     var xy=_points2(x,y),sx=(45*xy[0]+19*xy[2])/64,sy=(45*xy[1]+19*xy[5])/64;
     return [sx,sy];
@@ -1309,7 +1416,7 @@ function _exty() {
   for(x in b0) if(b0[x]!=' ') return 1;
   return 0;
 }
-function _mdesign(dm,up,mu) {
+function _mdesign(dm,up,mu,ev) {
  if(!dm) return;
  var lx=mu[0],ly=mu[1];
  if(up) {
@@ -1322,8 +1429,10 @@ function _mdesign(dm,up,mu) {
     var c=board[py][px],y;
     e=_extent(lx,ly);
     if(up) {
-      if(lx==px&&ly==py) board[ly][lx]=c=='o'?f.white.checked?'w':'x':c=='w'?'x':c=='x'?' ':'o';
-      else board[ly][lx]=c;
+      if(lx==px&&ly==py) {
+        var wh=f.white.checked;
+        board[ly][lx]=ev&&ev.ctrlKey?wh?c=='o'?'w':'o':c=='o'?' ':'o':c=='o'?wh?'w':'x':c=='w'?'x':c=='x'?' ':'o';
+      } else board[ly][lx]=c;
     } else {
       if(Math.abs(mm[0]-lx)>1||Math.abs(mm[1]-ly)>1) _dline(mm[0],mm[1],lx,ly,c);
       else board[ly][lx]=c;
@@ -1354,7 +1463,7 @@ function _mmove(e,d) {
     }
   } else if(xy[0]==mm[0]&&xy[1]==mm[1]) return;
   mm=xy,mm1=0;
-  if(dm) _mdesign(dm,0,xy);
+  if(dm) _mdesign(dm,0,xy,e);
 }
 
 function _full() {
@@ -1542,10 +1651,176 @@ function _switch16old(x,y,mask) {
   if(a) _f2(x+dx+1,y-1);if(b) _f2(x+dx,y+1);
 }
 
+function _switch23(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,j,k,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
+  if(onoff!=2) _f1(x,y);
+
+  var e=1^(y&1)^(x&1),dx=e?-1:1,dy=e?1:-1;
+  mask&=0xffffff,mask=(mask<<d)|(mask>>(24-d));
+  if(mask&0x01)  for(i=1;(b=board[j=y+dy*i])&&_xo(b[k=x-dx*i]);i++) _f2(k,j);
+  if(mask&0x02)  for(i=1;(b=board[j=y+dy*i])&&_xo(b[k=x-dx*(i-1)]);i++) _f2(k,j);
+  if(mask&0x04)  for(i=1;(b=board[j=y+dy*i])&&_xo(b[k=x+dx*i]);i++) _f2(k,j);
+  if(mask&0x08)  for(i=mask&0x02?2:1;(b=board[j=y+dy*i])&&_xo(b[k=x+dx*(i-1)]);i++) _f2(k,j);
+  if(mask&0x10)  for(i=1;(b=board[j=y-dy*i])&&_xo(b[k=x]);i++) _f2(k,j);
+  if(mask&0x010000)  for(i=1;(b=board[j=y-dy*i])&&_xo(b[k=x-dx*i]);i++) _f2(k,j);
+  if(mask&0x020000)  for(i=1;(b=board[j=y-dy*(i-1)])&&_xo(b[k=x-dx*i]);i++) _f2(k,j);
+  if(mask&0x040000) for(i=1;_xo(board[y][j=x-dx*2*i]);i++) _f2(j,y);
+  if(mask&0x080000) for(i=mask&0x020000?2:1;_xo(board[y][j=x-dx*(2*i-1)]);i++) _f2(j,y);
+  if(mask&0x100000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x+dx*(((i-1)>>1)*3+3-(i&1))]);i++) _f2(k,j);
+  if(mask&0x0100) for(i=1;_xo(board[y][j=x+dx*2*i]);i++) _f2(j,y);
+  if(mask&0x0200) for(i=1;_xo(board[y][j=x+dx*(2*i-1)]);i++) _f2(j,y);
+  if(mask&0x0400)  for(i=1;(b=board[j=y-dy*i])&&_xo(b[k=x+dx*i]);i++) _f2(k,j);
+  if(mask&0x0800)  for(i=mask&0x0200?2:1;(b=board[j=y-dy*(i-1)])&&_xo(b[k=x+dx*i]);i++) _f2(k,j);
+  if(mask&0x1000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x-dx*(((i-1)>>1)*3+3-(i&1))]);i++) _f2(k,j);
+}
+
+function _switch24(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,j,k,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
+  if(onoff!=2) _f1(x,y);
+
+  mask&=255,mask=(mask<<d)|(mask>>(8-d));
+  if(mask&1) for(i=1;_xo(board[y][j=x-i]);i++) _f2(j,y);
+  if(mask&2)  for(i=1;(b=board[j=y-i])&&_xo(b[k=x-i]);i++) _f2(k,j);
+  if(mask&4)  for(i=1;(b=board[j=y-i])&&_xo(b[x]);i++) _f2(x,j);
+  if(mask&8) for(i=1;(b=board[j=y-i])&&_xo(b[k=x+i]);i++) _f2(k,j);
+  if(mask&16)  for(i=1;_xo(board[y][j=x+i]);i++) _f2(j,y);
+  if(mask&32)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x+i]);i++) _f2(k,j);
+  if(mask&64)  for(i=1;(b=board[j=y+i])&&_xo(b[x]);i++) _f2(x,j);
+  if(mask&128)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x-i]);i++) _f2(k,j);
+}
+
+function _f25(x) { return x+1;}
+function _t25(x) { return x-1;}
+function _k25(x,y) { return (x<<16)|y;}
+
+
+function _line25(x,y,m,dx,dy,dic,_f2) {
+  var px=x,py=y,cx=_f25(x),xy1,v,r=[],k,n=88;
+  if(dx&&dy) {
+    for(;n--;) {
+      if(!(b=board[y])||!_xo(b[x])) break;
+      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      v=(((x+1)>>1)+y)&1;
+      x=_f25(x);
+      if(v) {
+        if((x&1)==(dx>0)) x=((x+2*dx)&~1)|(dy>0);
+        else y+=dy,x=(x&~1)|(dy<0);
+      } else {
+        if((x&1)==(dy<0)) x=((x+2*dx)&~1)|(dx<0);
+        else y+=dy,x=(x&~1)|(dx>0);
+      }
+      x=_t25(x);
+    }
+  } else if(dx||dy) {
+    if(dx) {
+      b=board[y];
+      for(;n--;) {
+        v=(((x+1)>>1)+y)&1;
+        if(v) {
+          if(!(b=board[y])||!_xo(b[x])) break;
+          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          x+=dx;
+        } else if(x==px&&y==py) { 
+          if(!(b=board[y])||!_xo(b[x])) break;
+          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          x=_f25(x),x&=~1,x+=2*dx+(dx<0),x=_t25(x);
+        } else {
+          x=_f25(x)&~1,c=0,x2=_t25(x);
+          if(m&1&&_xo(b[x2])) {c=1;if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
+          if(m&2&&_xo(b[x2+1])) {c=1;if(!dic[k=_k25(x2+1,y)]) dic[k]=1,_f2(x2+1,y);}
+          if(!c) break;
+          x=_t25(x+2*dx+(dx<0));
+        }
+      }
+    } else {
+      for(;n--;) {
+        v=(((x+1)>>1)+y)&1;
+        if(!v) {
+          if(!(b=board[y])||!_xo(b[x])) break;
+          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          x=_f25(x);
+          x^=1;
+          if((x&1)==(dy<0)) y+=dy;
+          x=_t25(x);
+        } else if(x==px&&y==py) { 
+          if(!(b=board[y])||!_xo(b[x])) break;
+          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          x=_f25(x),x=_t25((x&~1)+(dy<0)),y+=dy;
+        } else {
+          x=_f25(x)&~1,c=0,x2=_t25(x);
+          if(m&1&&_xo(b[x2])) {c=1;if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
+          if(m&2&&_xo(b[x2+1])) {c=1;if(!dic[k=_k25(x2+1,y)]) dic[k]=1,_f2(x2+1,y);}
+          if(!c) break;
+          x=_t25(x+(dy<0)),y+=dy;
+        }
+      }
+    }
+  }
+}
+
+function _switch25(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var r,cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2,dic={};
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border15(x,y);
+  if(onoff!=2) _f1(x,y);
+
+  mask&=0xfffff,mask=(mask<<d)|(mask>>(20-d));
+  if(mask&0xf) {
+    var x2=x+b[0],y2=y+b[1],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
+    if(mask&1) _line25(x2,y2,v?x1?2:1:x1?1:2,v?x1?1:-1:0,v?0:x1?1:-1,dic,_f2);
+    if(mask&2) r=v?x1?1:2:x1?3:0,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+  }
+  if(mask&0xf0) {
+    var x2=x+b[2],y2=y+b[3],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
+    if(mask&0x10) _line25(x2,y2,v&&!x1||!v&&!x1?2:1,v?0:x1?1:-1,v?x1?-1:1:0,dic,_f2);
+    if(mask&0x20) r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+  }
+  if(mask&0xf00) {
+    var x2=x+b[4],y2=y+b[5],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
+    if(mask&0x100) _line25(x2,y2,!v&&!x1||v&&!x1?2:1,v?0:x1?-1:1,v?x1?1:-1:0,dic,_f2);
+    if(mask&0x200) r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+  }
+  if(mask&0xf000) {
+    var x2=x+b[6],y2=y+b[7],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
+    if(mask&0x1000) _line25(x2,y2,v?x1?1:2:x1?2:1,v?x1?1:-1:0,v?0:x1?1:-1,dic,_f2);
+    if(mask&0x2000) r=v?x1?3:0:x1?2:1,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+  }
+  if(mask&0xf0000) {
+    var x2=x+b[8],y2=y+b[9],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
+    if(mask&0x10000) _line25(x2,y2,3,v?x1?-1:1:0,v?0:x1?-1:1,dic,_f2);
+    if(mask&0x20000) {
+       r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+       r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2);
+    }
+  }
+}
+
+function _switch26(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var x2,i,j,k,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
+  if(onoff!=2) _f1(x,y);
+
+  mask&=63,mask=(mask<<d)|(mask>>(6-d));
+  if(mask&1) for(i=1,k=x,j=y;_xo(board[j][k-=1]);i++) _f2(k,j);
+  if(mask&2)  for(i=1,k=x,j=y;(b=board[j-=1])&&_xo(b[k+=j&1?-1:0]);i++) _f2(k,j);
+  if(mask&4)  for(i=1,k=x,j=y;(b=board[j-=1])&&_xo(b[k+=j&1?0:1]);i++) _f2(k,j);
+  if(mask&8) for(i=1,k=x,j=y;_xo(board[j][k+=1]);i++) _f2(k,j);
+  if(mask&16)  for(i=1,k=x,j=y;(b=board[j+=1])&&_xo(b[k+=j&1?0:1]);i++) _f2(k,j);
+  if(mask&32)  for(i=1,k=x,j=y;(b=board[j+=1])&&_xo(b[k+=j&1?-1:0]);i++) _f2(k,j);
+}
+
 function _mask(x6) {
   if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
-  if(penta) return x6==6?23:x6==4?18:x6==3?30:x6==2?19:x6==1?13:31;
-  if(tria) return x6==9?0xd0308:x6==7?0x8000f:x6==6?0x10305:x6==4?0x10100:x6==3?0x70707:x6==2?0xd030f:x6==1?0x10101:0xf0f0f;
+  if(penta) {
+    if(onoffx) return x6==2?0x2:x6==1?0x1:0x11111;
+    return x6==6?23:x6==4?18:x6==3?30:x6==2?19:x6==1?13:31;
+  }
+  if(tria) {
+    if(onoffx) return x6==4?0xc0300:x6==3?8:x6==2?4:x6==1?0x30303:0xf0f0f;
+    return x6==9?0xd0308:x6==7?0x8000f:x6==6?0x10305:x6==4?0x10100:x6==3?0x70707:x6==2?0xd030f:x6==1?0x10101:0xf0f0f;
+  }
   return x6==9?192|6:x6==7?131+16:x6==6?119:x6==4?17:x6==3?187:x6==2?69:x6==1?85:255;
 }
 
@@ -1557,7 +1832,7 @@ function _mup(e) {
   var nx=board[0].length-1,ny=board.length-1,dm=_design(e);
   //console.log('px='+px+' py='+py+' lx='+lx+' ly='+ly);
   if(dm) {
-    _mdesign(dm,1,mxy);
+    _mdesign(dm,1,mxy,e);
     return;
   }
   if(lx<1||ly<1||lx>nx||ly>ny||px<0||py<0||px>=nx||py>=ny) return;
@@ -1565,7 +1840,12 @@ function _mup(e) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
-      if((x6==8)&&(hexa||tria||!(penta|tria4|tria2))) {
+      if(onoffx) {
+        hexa?(p=26,_switch26(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
+        :penta?(p=25,_switch25(lx,ly,p2=_mask(x6),p3=4*_idx(mxy[5],mxy[6],_points15(lx,ly),x6==6)))
+        :tria?(p=23,_switch23(lx,ly,p2=_mask(x6),p3=8*_idx(mxy[5],mxy[6],_points3(lx,ly),x6==6)))
+        :(p=24,_switch24(lx,ly,p2=diag&&Math.abs(mxy[2])+Math.abs(mxy[3])>cell?170:_mask(x6),p3=2*_idx(mxy[5],mxy[6],_points14(lx,ly),x6==6)));
+      } else if((x6==8)&&(hexa||tria||!(penta|tria4|tria2))) {
         var ix=_idx(mxy[5],mxy[6],(tria?_points3:hexa?_points16:_points14)(lx,ly),2),s=ix&64;
         p3=(tria?8:hexa?1:2)*(ix&63);
         tria?(p=4,_switch3(lx,ly,p2=s?0x30303:0x50505,p3)):hexa?(p=16,_switch16(lx,ly,p2=s?41:11,p3)):(p=13,_switch14(lx,ly,p2=s?129|24:3|48,p3));
@@ -1785,7 +2065,10 @@ function _undo(n) {
     while(redo&&n--) {
       var u=undo[--redo],px=u[0],py=u[1],dx=u[2],dy=u[3],m=-1;
       if(u.length==5) {
-        u[2]==15?_switch15(px,py,u[3],u[4],1):u[2]==16?_switch16(px,py,u[3],u[4],1)
+        u[2]==26?_switch26(px,py,u[3],u[4],1)
+        :u[2]==25?_switch25(px,py,u[3],u[4],1)
+        :u[2]==24?_switch24(px,py,u[3],u[4],1)
+        :u[2]==15?_switch15(px,py,u[3],u[4],1):u[2]==16?_switch16(px,py,u[3],u[4],1)
         :u[2]==5?_switch5(px,py,1):u[2]==2?_switch2(px,py,1):u[2]==4?_switch4(px,py,1)
         :_switch14(px,py,u[3],u[4],1);
       } else if(dx||dy) {
@@ -1804,7 +2087,10 @@ function _redo(n) {
   while(redo<undo.length&&n--) {
     var u=undo[redo++],px=u[0],py=u[1],dx=u[2],dy=u[3],m=1;
     if(u.length==5) 
-       u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
+       u[2]==26?_switch26(px,py,u[3],u[4])
+       :u[2]==25?_switch25(px,py,u[3],u[4])
+       :u[2]==24?_switch24(px,py,u[3],u[4])
+       :u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
        :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
        :_switch14(px,py,u[3],u[4]);
     else if(dx||dy) {
