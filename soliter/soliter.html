@@ -490,7 +490,16 @@ function transf2(mode) {
     for(y=0;y<board.length;y++)
       for(x=0,b=board[y];x<b.length;x++) {
         if(_xo(b[x])) {
-          if(penta) {
+          if(cubes) {
+            var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
+            y2=y;
+            if(mode==1)  cx=-cx,d=d?3-d:d,cx+=1^y&1;
+            else if(mode==2) cx+=(d==2&&(y&1)?1:0)+(d==1&&!(y&1)?-1:0),y2=-y+(d?-1:0),d=d?3-d:d;
+            //else m=cx,y2=m-(y>>1),cx=-y+((y+1)/3|0)-_div2p(m)+((((m^1)&(y2^0))&1)^1),d=(d+2)%3;
+            //else m=cx,y2=m-_div2n(y),cx=-y-_div2n(m)-_div2p(y2),d=(d+2)%3;
+            else m=cx,y2=m-_div2n(y),cx=-y-_div2p(y2),d=(d+2)%3;
+            x2=3*cx+d-2;
+          } else if(penta) {
             var cx=(x+1)/2|0,x1=x&1,v=(cx+y)&1;
             y2=y;
             if(mode==1) cx=-cx,x1^=v;
@@ -540,10 +549,18 @@ function transf2(mode) {
           if(dx>2) dy^=1,dx-=2;
           sx+=dx,sy+=dy;
         }
+        if(cubes) {
+          var d=sx%3;if(d) sx+=d>0?3-d:-d;
+          if(sy&1) sy++;
+        }
       } else if(mode==1||mode==2) { 
         if((penta|hexa|tria||tria2||tria4)&&(sy&1)) sy++;
         if((tria||tria4)&&(sx&1)) sx++;
         if((penta|tria2)&&(sx&3)) sx+=4-(sx&3);
+        if(cubes) {
+          var d=sx%3;if(d) sx+=d>0?3-d:-d;
+          if(sy&1) sy++;
+        }
       }
       b2=[];
       _extent2(b2,xa+sx+1,ya+sy+1);
@@ -810,21 +827,21 @@ function _points15(x,y) {
 }
 
 function _border8(x,y) {
-  var d=(x+1)%3,cx=(x+1-d)/3,dx=y&1?0:-3;
+  var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
   if(d==1) return [1,0,dx-1,1,-2,0,-1,0];
   if(d==2) return [-2,0,2,0,dx+1,1,-1,0];
   return [1,0,dx+2,-1,dx+4,-1,2,0];
 }
 
 function _border18(x,y) {
-  var d=(x+1)%3,cx=(x+1-d)/3,dx=y&1?0:-3;
+  var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
   if(d==1) return [1,0,3,0,dx+2,1,dx+3,1  ,dx-1,1,dx,1,dx+1,1,dx+3,1  ,-2,0,-3,0,-4,0,dx,-1  ,-1,0,dx+3,-1,dx+1,-1,dx,-1];
   if(d==2) return [-2,0,dx,-1,dx+2,-1,dx+3,-1 ,2,0,3,0,1,0,dx+3,-1 ,dx+1,1,dx+3,1,dx+2,1,dx,1 ,-1,0,-3,0,dx-2,1,dx,1];
   return [1,0,dx,+1,-1,0,-3,0  ,dx+2,-1,dx,-1,dx+1,-1,-3,0  ,dx+4,-1,dx+3,-1,dx+5,-1,3,0  ,2,0,dx+3,1,4,0,3,0];
 }
 
 function _points8(x,y) {
-  var d=(x+1)%3,cx=(x+1-d)/3;
+  var d=(x+2)%3,cx=(x+2-d)/3;
   var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4;
   if(d==1) return [sx+x2,sy+4*y2,sx,sy+3*y2,sx,sy+y2,sx+x2,sy+2*y2];
   else if(d==2) return [sx+2*x2,sy+y2,sx+2*x2,sy+3*y2,sx+x2,sy+4*y2,sx+x2,sy+2*y2];
@@ -956,7 +973,7 @@ function _drawcell15(x,y) {
 }
 
 function _drawcell8(x,y) {
-  var xy=_points8(x,y),d=(x+1)%3,cx=(x+1-d)/3;
+  var xy=_points8(x,y),d=(x+2)%3,cx=(x+2-d)/3;
   var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4;
   ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*v+x1]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#ffffff';
   ctx.beginPath();
@@ -1336,8 +1353,8 @@ function _mxy(e) {
         if(d==1) cx++,sx+=cell8x;
       }
     }
-    return [3*cx+d-1,cy,ax-cell8x,ay-cell8y*3/2,2,ex,ey];
-    //var d=(x+1)%3,cx=(x+1-d)/3;
+    return [3*cx+d-2,cy,ax-cell8x,ay-cell8y*3/2,2,ex,ey];
+    //var d=(x+2)%3,cx=(x+2-d)/3;
     //var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4;
   } else if(penta) {
     var cx=Math.floor((ex-brd)/cell7),cy=Math.floor((ey-brd)/cell7),v=(cx+cy)&1,x1,c2=cell7/2,c4=c2/2;
@@ -1445,7 +1462,7 @@ function _drect(px,py,mx,my,c) {
 }
 function _peg(x,y) {
   if(cubes) {
-    var d=(x+1)%3,cx=(x+1-d)/3;
+    var d=(x+2)%3,cx=(x+2-d)/3;
     var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4,r=y2*3/4-2;
     return d?d==1?[sx+x2/2,sy+5*y2/2,r]:[sx+3*x2/2,sy+5*y2/2,r]:[sx+x2,sy+y2,r];
   } else if(penta) {
@@ -1637,7 +1654,7 @@ function _jumps15(x,y) {
 }
 
 function _jumps8(x,y) {
-  var d=(x+1)%3,cx=(x+1-d)/3,dx=y&1?0:-3;
+  var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
   if(d==1) return [[-2,0,-3,0],[1,0,3,0],[-1,0,dx+3,-1],[dx-1,1,dx,1],[1,0,dx+2,1],[dx-1,1,dx+1,1],[-2,0,-4,0],[-1,0,dx+1,-1]];
   if(d==2) return [[-2,0,dx,-1],[2,0,3,0],[dx+1,1,dx+3,1],[-1,0,-3,0],[-2,0,dx+2,-1],[2,0,1,0],[dx+1,1,dx+2,1],[-1,0,dx-2,1]];
   return [[1,0,dx,+1],[dx+2,-1,dx,-1],[dx+4,-1,dx+3,-1],[2,0,dx+3,1],[1,0,-1,0],[dx+2,-1,dx+1,-1],[dx+4,-1,dx+5,-1],[2,0,4,0]];
@@ -2093,7 +2110,7 @@ function _switch26(x,y,mask,d,u) {
 function _mask(x6,x,y,p3) {
   if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
   if(cubes) {
-    var d=(x+1)%3,b=(p3==4||p3==12),m;
+    var d=(x+2)%3,b=(p3==4||p3==12),m;
     m=x6==6?23:x6==4?8:x6==3?0x3333:x6==2?0x55:x6==1?0x1101:65535;
     if(!b) m=(m&0xf)|((m&0xff00)>>4)|((m&0xf0)<<8);
     return m;
