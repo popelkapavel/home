@@ -90,11 +90,19 @@
 
 </svg>
 
-<input name=hexa type=radio value=5 title="cubes" />
+<input name=hexa type=radio value=6 title="cubes" />
 <svg width=20 height=20 style=vertical-align:middle onclick=_sethex(6) >
 <polygon points="1,5 10,1 19,5 19,15 10,19 1,15" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="1,5 10,10 19,5" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 <polyline points="10,10 10,19" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
+
+</svg>
+
+<input name=hexa type=radio value=7 title="delta" />
+<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(6) >
+<polygon points="1,19 10,1 19,19 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
+<polyline points="5,10 10,13 15,10" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
+<polyline points="10,13 10,19" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 
 </svg>
 
@@ -236,8 +244,9 @@ var grd,mp,mm,mm1,drawms,tdraw,design;
 var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value;
 var cell6x=40,cell6y=Math.round(cell6x*Math.sqrt(3)/2);
 var cell8y=60,cell8x=Math.round(cell8y*Math.sqrt(3)/2);
-var onoff=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,white=0,rou=0;
+var onoff=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,delta=0,white=0,rou=0;
 var cell3x=48,cell3y=Math.round(cell3x*Math.sqrt(3)/2);
+var cell9x=64,cell9y=Math.round(cell9x*Math.sqrt(3)/2);
 var clr2=['#feb','#db9','#a86'],clr3=['#bbf','#fbb','#ffb'],clr4=['#ffc','#c88','#88c','#cff'];
 var board,undo,redo,moves=0,sele=[];
 
@@ -361,8 +370,10 @@ function _resizea(mx,my) {
 }
 function _resize2(w2,h) {
   var wn,hn;
-  if(cubes) {
-    wn=2*brd+((w2+2)/3|0)*cell8x,hn=2*brd+h*cell8y;
+  if(delta) {
+    wn=2*brd+((w2+26)/12|0)*cell9x,hn=2*brd+h*cell9y;
+  } else if(cubes) {
+    wn=2*brd+((w2+14)/6|0)*cell8x,hn=2*brd+h*cell8y*3/4;
   } else if(penta) {
     wn=2*brd+(((w2+2)>>2)+1)*cell7,hn=2*brd+h*cell7;
   } else if(tria4) {
@@ -623,8 +634,8 @@ function whitechg(src,value) {
  }
 }
 function hexachg(e) {
-  hexa=hxa[1].checked;tria=hxa[2].checked,tria2=hxa[3].checked,tria4=hxa[4].checked,penta=hxa[5].checked,cubes=hxa[6].checked;
-  quad=!(hexa|tria|tria2|tria4|penta|cubes);
+  hexa=hxa[1].checked;tria=hxa[2].checked,tria2=hxa[3].checked,tria4=hxa[4].checked,penta=hxa[5].checked,cubes=hxa[6].checked,delta=hxa[7].checked;
+  quad=!(hexa|tria|tria2|tria4|penta|cubes|delta);
   if(e&&!depth) _resizea(),_drawboard();
 }
 function _sethex(i) { hxa[i].checked=true; hexachg(1); }
@@ -637,7 +648,7 @@ function _setclr(i) { mxa[i].checked=true; monochg(1); }
 
 function _cmd(a) {
   if(a) a.forEach(function(x) {
-    if(/quad|hexa|tria|penta|cubes/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:x=='penta'?5:x=='cubes'?6:0].checked=1,hexachg();
+    if(/quad|hexa|tria|penta|cubes|delta/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:x=='penta'?5:x=='cubes'?6:x=='delta'?7:0].checked=1,hexachg();
     else if(/sol|onoff/.test(x)) (f.onoff.checked=(onoff=x=='onoffo'?2:x=='onoffx'?4:x=='onoff3'?3:x=='onoff'?1:0)>0)?f.onoff2.value=onoff:0;
     else if(/white_/.test(x)) whitechg(0,x.substr(6));
     else if(/(no)?diag/.test(x)) f.diag.checked=(diag=x=='diag');
@@ -687,7 +698,7 @@ function _white() {
 function _game2txt() {
   var s=[],c,l,r,x,y,xi=-1,yi,ya=0,n,wh=f.white2.value!='xxff'||_white();
   n=f.ta.value.match(/@[^,\r\n]+/);
-  n='//'+(n?n[0]+',':'')+(cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
+  n='//'+(n?n[0]+',':'')+(delta?'delta':cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
   for(y=0;y<board.length;y++) {
     l='',r=board[y];
     for(x=0;x<r.length;x++) {
@@ -765,7 +776,7 @@ function _drawsele(x,y) {
 }
 
 function _points(x,y) {
-  return cubes?_points8(x,y):penta?_points15(x,y):tria4?_points5(x,y):tria2?_points2(x,y):tria?_points3(x,y):hexa?_points16(x,y):_points14(x,y);
+  return delta?_points9(x,y):cubes?_points8(x,y):penta?_points15(x,y):tria4?_points5(x,y):tria2?_points2(x,y):tria?_points3(x,y):hexa?_points16(x,y):_points14(x,y);
 }
 
 function _points2(x,y) {
@@ -1014,6 +1025,77 @@ function _drawcell8(x,y) {
   }
 }
 
+function _border9(x,y) {
+  var r=(x+2)%3,cx=(x+2-r)/3,d=1^(y&1)^(cx&1),dy=d?-1:1;
+  if(d) {
+    if(r==1) return [2,0,-2,0,-1,0,1,0];
+    if(r==2) return [0,-dy,2,0,-1,0,-2,0];
+    return [-2,0,0,-dy,2,0,1,0];
+  } else {
+    if(r==1) return [-2,0,2,0,1,0,-1,0];
+    if(r==2) return [2,0,0,-dy,-2,0,-1,0];
+    return [0,-dy,-2,0,1,0,2,0];
+  }
+}
+
+function _border19(x,y) {
+  var r=(x+2)%3,cx=(x+2-r)/3,d=1^(y&1)^(cx&1),dy=d?-1:1;
+  if(d) {
+    if(r==1) return [2,0,-2,0,-1,0,1,0];
+    if(r==2) return [0,1,2,0,-1,0,-2,0];
+    return [-2,0,0,1,2,0,1,0];
+  } else {
+    if(r==1) return [-2,0,-4,0,-2,1,-3,0 ,2,0,4,0,2,1,3,0 ,1,0,1,-1,3,0,-1,0 ,-1,0,-1,-1,-3,0,1,0];
+    if(r==2) return [2,0,3,0,4,0,1,0 ,0,-1,-1,-1,2,-1,-2,-1 ,-2,0,-4,0,-2,-1,-1,0 ,-1,0,-3,0,1,0,-2,0];
+    return [0,-1,1,-1,-2,-1,2,-1 ,-2,0,-3,0,-4,0,-1,0 ,1,0,3,0,-1,0,2,0  ,2,0,4,0,2,-1,1,0];
+  }
+}
+
+function _points9(x,y) {
+  var r=(x+2)%3,cx=(x+2-r)/3,d=1^(y&1)^(cx&1),dy=d?-1:1;
+  var sx=brd+cx*cell9x/2,sy=brd+(y+d)*cell9y,y2=sy+dy*cell9y,y3=(2*sy+y2)/3,y4=(sy+y2)/2,x4=sx+cell9x/2;
+  if(d) {
+    if(r==1) return [x4,y2,sx+cell9x/4,y4,x4,y3,sx+cell9x*3/4,y4];
+    if(r==2) return [sx+cell9x,sy,sx+cell9x*3/4,y4,x4,y3,x4,sy ];
+    return [sx,sy,x4,sy,x4,y3,sx+cell9x/4,y4];
+  } else {
+    if(r==1) return [x4,y2,sx+cell9x*3/4,y4,x4,y3,sx+cell9x/4,y4];
+    if(r==2) return [sx+cell9x,sy,x4,sy,x4,y3,sx+cell9x*3/4,y4];
+    return [sx,sy,sx+cell9x/4,y4,x4,y3,x4,sy];
+  }
+}
+
+function _drawcell9(x,y) {
+  var xy=_points9(x,y),d=(x+2)%3,cx=(x+2-d)/3;
+  ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[d]:'#ffffff';
+  ctx.beginPath();
+  if(rou) {
+    var i,i,b2=_border9(x,y),b=[],lx,ly,nx,ny;
+    for(i1=i=0;i<8;i1++,i+=2) b[i1]=_brd(x+b2[i],y+b2[i+1]);
+    b.push(b[0]);
+    xy.push(xy[0],xy[1]);
+    ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
+    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell8y/4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth=0.5;
+    b.push(b[0]);b.shift();
+    for(i1=i=0;i<8;i1++,i+=2) if(b[i1]) _line(xy[i],xy[i+1],xy[i+2],xy[i+3]);
+  } else {
+    ctx.moveTo(xy[0],xy[1]);
+    ctx.lineTo(xy[2],xy[3]);
+    ctx.lineTo(xy[4],xy[5]);
+    ctx.lineTo(xy[6],xy[7]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+  }
+}
+
+
+
 function _drawpeg(x,y,wh,p) {
   var sx=brd+x*cell,sy=brd+y*cell,c2=cell/2;
   if(wh) ctx.lineWidth=2;
@@ -1094,6 +1176,29 @@ function _drawpeg8(x,y,wh,p) {
         lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
     } else 
       _polyex(_points8(x,y),0.75);
+  } else {
+    var p=_peg(x,y);
+    ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
+  }
+  ctx.fill();
+  if(wh) ctx.stroke();
+}
+
+function _drawpeg9(x,y,wh,p) {
+  if(wh) ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.fillStyle=wh?'#fff':'#000';
+  if(p) {
+    if(rou) {
+      var xy=_polyex2(_points9(x,y),0.75),b=_border9(x,y);
+      var i,i1,o=[],lx,ly,nx,ny;
+      for(i1=i=0;i<8;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+      o.push(o[0]);xy.push(xy[0],xy[1]);
+      ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
+      for(i1=i=0;i<8;i1++,i+=2)
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+    } else 
+      _polyex(_points9(x,y),0.75);
   } else {
     var p=_peg(x,y);
     ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
@@ -1321,6 +1426,25 @@ function _drawborder8(x,y) {
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
 }
 
+function _drawborder9(x,y) {
+  var xy=_points9(x,y),b=_border9(x,y),i,i2;
+  if(rou) {
+    var i1,a,cx=(xy[0]+xy[4])/2,cy=(xy[1]+xy[5])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    for(i1=i=0;i<8;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i<8;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else 
+    for(i=0,i2=6;i<8;i2=i,i+=2)
+      if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
+}
+
+
 function _drawboard() {
   var n,m,b,x,xe,y,c,nx=board[0].length-1,ny=board.length-1,w,ms=+new Date(),p=f.peg.checked;
   n=m=0,_clear();
@@ -1329,9 +1453,9 @@ function _drawboard() {
   for(y=0;y<ny;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
       if((c=b[x])!=' ') {
-        cubes?_drawcell8(x,y):penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell16(x,y):_drawcell(x,y);
+        delta?_drawcell9(x,y):cubes?_drawcell8(x,y):penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell16(x,y):_drawcell(x,y);
         if((w=c=='w')||c=='o') {
-          n+=onoff?c=='o':c=='o'||w,cubes?_drawpeg8(x,y,w,p):penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg16(x,y,w,p):_drawpeg(x,y,w,p);
+          n+=onoff?c=='o':c=='o'||w,delta?_drawpeg9(x,y,w,p):cubes?_drawpeg8(x,y,w,p):penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg16(x,y,w,p):_drawpeg(x,y,w,p);
           m+=onoff?c=='o':+_can(x,y,0,1)+_can(x,y,0,-1)+_can(x,y,1,0)+_can(x,y,-1,0)+(diag?_can(x,y,1,-1)+_can(x,y,1,1)+_can(x,y,-1,-1)+_can(x,y,-1,1):0);
         }
       }
@@ -1339,7 +1463,7 @@ function _drawboard() {
   for(y=1;y<ny;y++)
     for(x=1;x<nx;x++)
       if((b=board[y])&&(c=b[x])&&c!=' ') 
-        cubes?_drawborder8(x,y):penta?_drawborder15(x,y):tria4?_drawborder5(x,y):tria2?_drawborder2(x,y):tria?_drawborder3(x,y):hexa?_drawborder16(x,y):_drawborder(x,y);
+        delta?_drawborder9(x,y):cubes?_drawborder8(x,y):penta?_drawborder15(x,y):tria4?_drawborder5(x,y):tria2?_drawborder2(x,y):tria?_drawborder3(x,y):hexa?_drawborder16(x,y):_drawborder(x,y);
   _pegs(n);
   for(n=0;n<sele.length;n+=2)
     _drawsele(sele[n],sele[n+1]);
@@ -1368,6 +1492,18 @@ function _mxy(e) {
     return [3*cx+d-2,cy,ax-cell8x,ay-cell8y*3/2,2,ex,ey];
     //var d=(x+2)%3,cx=(x+2-d)/3;
     //var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4;
+  } else if(delta) {
+    var c62=cell9x/2,cy=Math.floor((ey-brd)/cell9y),cx=Math.floor((ex-brd)/c62),d=1^(cy&1)^(cx&1),dy=d?1:-1;
+    var sx=brd+cx*c62,sy=brd+(cy+d)*cell9y,ax,ay=2*(ey-sy)-dy*cell9y,gx,gy,r,yy;
+    gx=ex-sx,gy=ey-sy;
+    //alert(''+gx+' '+gy);
+    if(dy*(gx*dy*cell9y+gy*c62)<0) cx--,sx-=c62,dy*=-1,d=!d;
+    sy=brd+(cy+d)*cell9y;
+    ax=2*(ex-sx)-cell9x,yy=dy*(ey-(sy-dy*cell9y/3));
+    r=ax>0?2:0;
+    if(yy<-Math.abs(ax)/3) r=1;
+    //if(dy*yy<0) r=1;else r=0;
+    return [3*cx-2+r,cy,ax,ay,0,ex,ey];
   } else if(penta) {
     var cx=Math.floor((ex-brd)/cell7),cy=Math.floor((ey-brd)/cell7),v=(cx+cy)&1,x1,c2=cell7/2,c4=c2/2;
     var sx=brd+cx*cell7,sy=brd+cy*cell7,ax=2*(ex-sx),ay=2*(ey-sy),gx,gy,r;
@@ -1473,7 +1609,11 @@ function _drect(px,py,mx,my,c) {
   }
 }
 function _peg(x,y) {
-  if(cubes) {
+  if(delta) {
+    var r=(x+2)%3,cx=((x+2-r)/3)|0,d=1^(y&1)^(cx&1),dy=d?-1:1,r2=cell9x/7;
+    var sx=brd+cx*cell9x/2,sy=brd+(y+d)*cell9y,y2=sy+dy*cell9y,y3=(2*sy+y2)/3,y4=(sy+y2)/2,x4=sx+cell9x/2;
+    return r==1?[x4,(5*y3+3*y2)/8,r2]:r==2?[(5*x4+3*(sx+cell9x))/8,(5*y3+3*sy)/8,r2]:[(5*x4+3*sx)/8,(5*y3+3*sy)/8,r2];
+  } else if(cubes) {
     var d=(x+2)%3,cx=(x+2-d)/3;
     var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4,r=y2*3/4-2;
     return d?d==1?[sx+x2/2,sy+5*y2/2,r]:[sx+3*x2/2,sy+5*y2/2,r]:[sx+x2,sy+y2,r];
@@ -1533,12 +1673,12 @@ function _dfill(px,py,c) {
   while(n<fifo.length) {
     x=x1=fifo[n],y=fifo[n+1],n+=2,b=board[y],m=fifo.length,u=y>1,d=y+1<board.length;
     t=0;
-    if(!cubes&&!penta&&!tria4) {
+    if(!delta&&!cubes&&!penta&&!tria4) {
       f=0;if(x>1&&(f=b[x-1])==s) t++,fifo.push(x-1,y);else if(f==nc||f=='f') t++;
       f=0;if(x+1<b.length&&(f=b[x+1])==s) t++,fifo.push(x+1,y);else if(f==nc||f=='f') t++;
     }
-    if(cubes||penta||tria4) {
-      var i,d=(cubes?_border8:tria4?_border5:_border15)(x,y),l=d.length,x2,y2;
+    if(delta||cubes||penta||tria4) {
+      var i,d=(delta?_border9:cubes?_border8:tria4?_border5:_border15)(x,y),l=d.length,x2,y2;
       for(i=0;i<l;i+=2) {
         f=0,x2=x+d[i],y2=y+d[i+1];
         if(y2>1&&y2+1<board.length&&(f=board[y2][x2])==s) t++,fifo.push(x2,y2);
@@ -1692,6 +1832,20 @@ function _jumps8(x,y) {
   return [[1,0,dx,+1],[dx+2,-1,dx,-1],[dx+4,-1,dx+3,-1],[2,0,dx+3,1],[1,0,-1,0],[dx+2,-1,dx+1,-1],[dx+4,-1,dx+5,-1],[2,0,4,0]];
 }
 
+function _jumps9(x,y) {
+  var r=(x+2)%3,cx=(x+2-r)/3,d=1^(y&1)^(cx&1),dy=d?-1:1;
+  if(d) {
+    if(r==1) return [[-1,0,-1,-dy],[1,0,1,-dy],[2,0,4,0],[-2,0,-4,0],[-2,0,-2,dy],[2,0,2,dy] ,[-2,0,-3,0],[-1,0,-3,0],[1,0,3,0],[2,0,3,0]];
+    if(r==2) return [[2,0,3,0],[-1,0,-3,0],[-2,0,-4,0],[0,-dy,-1,-dy],[0,-dy,2,-dy],[2,0,4,0] ,[-2,0,-2,-dy],[0,-dy,-2,-dy],[2,0,1,0],[-1,0,1,0]];
+    return [[-2,0,-3,0],[0,-dy,1,-dy],[2,0,4,0],[1,0,3,0],[-2,0,-4,0],[0,-dy,-2,-dy] ,[-2,0,-1,0],[0,-dy,2,-dy],[2,0,2,-dy],[1,0,-1,0]];
+    return [[]];
+  } else {
+    if(r==1) return [[-1,0,-1,-dy],[1,0,1,-dy],[2,0,4,0],[-2,0,-4,0],[-2,0,-2,dy],[2,0,2,dy] ,[-2,0,-3,0],[-1,0,-3,0],[1,0,3,0],[2,0,3,0]];
+    if(r==2) return [[2,0,3,0],[-1,0,-3,0],[-2,0,-4,0],[0,-dy,-1,-dy],[0,-dy,2,-dy],[2,0,4,0] ,[-2,0,-2,-dy],[0,-dy,-2,-dy],[2,0,1,0],[-1,0,1,0]];
+    return [[-2,0,-3,0],[0,-dy,1,-dy],[2,0,4,0],[1,0,3,0],[-2,0,-4,0],[0,-dy,-2,-dy] ,[-2,0,-1,0],[0,-dy,2,-dy],[2,0,2,-dy],[1,0,-1,0]];
+  }
+}
+
 function _jumps3(x,y) {
   var d=(y^x)&1,dy=d?-1:1;
   return [[-1,0,-2,0],[-1,0,-1,-dy],[1,0,2,0],[1,0,1,-dy],[0,dy,-1,dy],[0,dy,1,dy] 
@@ -1710,6 +1864,7 @@ function _jumps2(x,y) {
 
 function _jumps(px,py,dx,dy) {
   var d,ex,qx,qy,rx,ry,j;
+  if(delta) return _add2(px,py,_jumps9(px,py)[dx]);
   if(cubes) return _add2(px,py,_jumps8(px,py)[dx]);
   if(penta) return _add2(px,py,_jumps15(px,py)[dx]);
   if(hexa) return _add2(px,py,_jumps6(px,py)[dx]);
@@ -1864,6 +2019,16 @@ function _switch8(x,y,mask,d,u) {
 function _switch18(x,y,mask,d,u) {
   var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border18(x,y);
+  if(onoff!=2) _f1(x,y);
+  if((mask&0x8)&&(mask&0x80)) mask^=0x8;
+  if((mask&0x800)&&(mask&0x8000)) mask^=0x800;
+  for(i=2*d,m=1;m<65536;i+=i==30?-30:2,m<<=1) 
+   if(mask&m) _f2(x+b[i],y+b[i+1]);
+}
+
+function _switch19(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border19(x,y);
   if(onoff!=2) _f1(x,y);
   if((mask&0x8)&&(mask&0x80)) mask^=0x8;
   if((mask&0x800)&&(mask&0x8000)) mask^=0x800;
@@ -2154,6 +2319,11 @@ function _switch26(x,y,mask,d,u) {
 
 function _mask(x6,x,y,p3) {
   if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
+  if(delta) { 
+    var m;
+    m=x6==2?3:x6==1?1:0xf;
+    return m;
+  }
   if(cubes) {
     var d=(x+2)%3,b=(p3==4||p3==12),m;
     m=x6==6?23:x6==4?8:x6==3?0x3333:x6==2?0x55:x6==1?0x1101:65535;
@@ -2200,7 +2370,8 @@ function _mup(e) {
         p3=(tria?8:hexa?1:2)*(ix&63);
         tria?(p=4,_switch3(lx,ly,p2=s?0x30303:0x50505,p3)):hexa?(p=16,_switch16(lx,ly,p2=s?41:11,p3)):(p=13,_switch14(lx,ly,p2=s?129|24:3|48,p3));
       } else 
-        cubes?(p=18,p3=4*_idx(mxy[5],mxy[6],_points8(lx,ly),x6>=6),_switch18(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
+        delta?(p=19,p3=4*_idx(mxy[5],mxy[6],_points9(lx,ly),x6>=6),_switch19(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
+        :cubes?(p=18,p3=4*_idx(mxy[5],mxy[6],_points8(lx,ly),x6>=6),_switch18(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
         :penta?(p=15,_switch15(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points15(lx,ly),x6>=6)))
         :hexa?(p=16,_switch16(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
         :tria?(p=4,_switch3(lx,ly,p2=_mask(x6),p3=8*_idx(mxy[5],mxy[6],_points3(lx,ly),x6==6))) //tria?(p=4,_switch4(lx,ly))
@@ -2214,10 +2385,11 @@ function _mup(e) {
     return;
   }
   var dx,dy,l,r,u,u2,d,d2,ld,lu,rd,ru,s,c=board[py][px],c1,ex;
-  if(penta||cubes||hexa||quad||tria|tria2|tria4) {
+  if(penta||delta||cubes||hexa||quad||tria|tria2|tria4) {
     if(c=='o'||c=='w') {
-      var ja=tria4?_jumps5(px,py):tria2?_jumps2(px,py):tria?_jumps3(px,py):hexa?_jumps6(px,py):cubes?_jumps8(px,py):penta?_jumps15(px,py):_jumps4(px,py);
-      var i,n=diag?ja.length:quad?4:hexa?6:cubes?4:tria?6:tria2||tria4?6:10;
+      var ja=tria4?_jumps5(px,py):tria2?_jumps2(px,py):tria?_jumps3(px,py):hexa?_jumps6(px,py)
+          :delta?_jumps9(px,py):cubes?_jumps8(px,py):penta?_jumps15(px,py):_jumps4(px,py);
+      var i,n=diag?ja.length:quad?4:hexa?6:cubes?4:delta?6:tria?6:tria2||tria4?6:10;
       for(i=0;i<n;i++) {
         j=ja[i],qx=px+j[0],qy=py+j[1],rx=px+j[2],ry=py+j[3];
         if(((lx==qx&&ly==qy)||(lx==rx&&ly==ry))&&_can5(px,py,qx,qy,rx,ry)) {
@@ -2398,7 +2570,7 @@ function _mup(e) {
     else if(rd) dx=1,dy=+1;
     if(c=='x') px-=2*dx,py-=2*dy,c=board[py][px];
   }
-  if(!tria&&!tria4&&!penta&&!cubes&&!hexa&&!quad&&!tria2) qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
+  if(!tria&&!tria4&&!penta&&!delta&&!cubes&&!hexa&&!quad&&!tria2) qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
   c1=board[qy][qx];
   undo.length=redo;undo[redo++]=u=[px,py,dx,dy,c,c1];
   _moves(1);
@@ -2426,7 +2598,7 @@ function _undo(n) {
         :u[2]==27?_switch27(px,py,u[3],u[4],1)
         :u[2]==25?_switch25(px,py,u[3],u[4],1)
         :u[2]==24?_switch24(px,py,u[3],u[4],1)
-        :u[2]==18?_switch18(px,py,u[3],u[4],1)
+        :u[2]==19?_switch19(px,py,u[3],u[4],1):u[2]==18?_switch18(px,py,u[3],u[4],1)
         :u[2]==15?_switch15(px,py,u[3],u[4],1):u[2]==16?_switch16(px,py,u[3],u[4],1)
         :u[2]==5?_switch5(px,py,1):u[2]==2?_switch2(px,py,1):u[2]==4?_switch4(px,py,1)
         :_switch14(px,py,u[3],u[4],1);
@@ -2451,7 +2623,7 @@ function _redo(n) {
        :u[2]==27?_switch27(px,py,u[3],u[4])
        :u[2]==25?_switch25(px,py,u[3],u[4])
        :u[2]==24?_switch24(px,py,u[3],u[4])
-       :u[2]==18?_switch24(px,py,u[3],u[4])
+       :u[2]==19?_switch19(px,py,u[3],u[4]):u[2]==18?_switch18(px,py,u[3],u[4])
        :u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
        :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
        :_switch14(px,py,u[3],u[4]);
