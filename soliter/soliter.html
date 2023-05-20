@@ -522,7 +522,14 @@ function transf2(mode) {
     for(y=0;y<board.length;y++)
       for(x=0,b=board[y];x<b.length;x++) {
         if(_xob(b[x])) {
-          if(cubes) {
+          if(trap) {
+            var d=(x+1)%2,cx=(x+1-d)/2,dx=y&1?0:-2,dd=(cx+2*(y&1))%3;
+            y2=y;
+            if(mode==1)  cx=-cx,d=1-d,cx+=1^y&1;
+            else if(mode==2) cx+=0,d=dd==1?d:1-d,y2=-y;
+            else m=cx,y2=m-_div2n(y),cx=-y-_div2p(y2),d=(d+2)%3;
+            x2=2*cx+d-1;
+          } else if(cubes) {
             var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
             y2=y;
             if(mode==1)  cx=-cx,d=d?3-d:d,cx+=1^y&1;
@@ -595,6 +602,10 @@ function transf2(mode) {
         if((penta|tria2)&&(sx&3)) sx+=4-(sx&3);
         if(cubes) {
           var d=sx%3;if(d) sx+=d>0?3-d:-d;
+          if(sy&1) sy++;
+        }
+        if(trap) {
+          var d=sx%2;if(d) sx+=d>0?2-d:-d;
           if(sy&1) sy++;
         }
       }
@@ -2723,6 +2734,54 @@ function _switch22(x,y,mask,d,u) {
   if(mask&4) _line22(x,y,0,r==0?-1:r==3?1:0,r==1?-1:r==2?1:0,dic,_f2)
 }
 
+function _line21(x,y,i,dic,_f2) {
+  var x3,y3,px=x,py=y,r,v,b,k,n=88;
+  var d=(x+1)%2,cx=(x+1)>>1,dd=(cx+2*(y&1))%3+3*d,pdd=dd,xy,dx;
+  if(i&1) {
+    pdd=(dd+(i==3?3:0))%6;
+    for(;n--;) {
+      x3=x,y3=y;
+      dx=(y&1)?0:-2;
+      if(pdd==0) xy=[[1+dx,1,4],[dx,1,2],[1,0,5],[-1,0,0],[-1,0,1],[dx,1,3]][dd],x+=xy[0],y+=xy[1],dd=xy[2];
+      else if(pdd==1) x--; 
+      else if(pdd==2) xy=[[1,0,3],[dx+1,-1,5],[dx,-1,0],[dx,-1,4],[-1,0,1],[-1,0,2]][dd],x+=xy[0],y+=xy[1],dd=xy[2];
+      else if(pdd==3) xy=[[1,0,3],[1,0,4],[dx+2,-1,1],[dx+2,-1,5],[dx+1,-1,0],[-1,0,2]][dd],x+=xy[0],y+=xy[1],dd=xy[2];
+      else if(pdd==4) x++;
+      else if(pdd==5) xy=[[dx+2,1,2],[1,0,4],[1,0,5],[-1,0,0],[dx+2,1,3],[dx+1,1,1]][dd],x+=xy[0],y+=xy[1],dd=xy[2];
+      if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
+      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+    }
+  } else {
+    pdd=(dd+(i==2?3:0))%6;
+    for(;n--;) {
+      x3=x,y3=y;
+      dx=(y&1)?0:-2;
+      if(pdd==0) xy=[[dx+2,1,2],[1,0,4],[1,0,5],[1,0,1],[dx+2,1,3],[1,0,0]][dd];
+      else if(pdd==1) xy=[[dx+1,1,4],[dx,1,2],[1,0,5],[-1,0,0],[dx+2,1,3],[dx+1,1,1]][dd];
+      else if(pdd==2) xy=[[-1,0,5],[dx,1,2],[-1,0,4],[-1,0,0],[-1,0,1],[dx,1,3]][dd];
+      else if(pdd==3) xy=[[-1,0,5],[-1,0,3],[dx,-1,0],[dx,-1,4],[-1,0,1],[-1,0,2]][dd];
+      else if(pdd==4) xy=[[1,0,3],[dx+1,-1,5],[dx+2,-1,1],[dx,-1,4],[dx+1,-1,0],[-1,0,2]][dd];
+      else if(pdd==5) xy=[[1,0,3],[1,0,4],[dx+2,-1,1],[dx+2,-1,5],[1,0,2],[1,0,0]][dd];
+      x+=xy[0],y+=xy[1],dd=xy[2];
+      if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
+      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+    }
+  }
+}
+
+function _switch21(x,y,mask,d,u) {
+  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
+  var r=(((y+1)&1)<<1)|((x+1)&1),dic={};
+  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
+  if(onoff!=2) _f1(x,y);
+
+  mask&=0xf,mask=rol(4,mask,d);
+  if(mask&1) _line21(x,y,0,dic,_f2)
+  if(mask&2) _line21(x,y,1,dic,_f2)
+  if(mask&4) _line21(x,y,2,dic,_f2)
+  if(mask&8) _line21(x,y,3,dic,_f2)
+}
+
 function _line28(x,y,m,dx,dy,dic,_f2) {
   var n=88;
   if(dy) {
@@ -2931,6 +2990,7 @@ function _switch26(x,y,mask,d,u) {
 function _mask(x6,x,y,p3) {
   if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
   if(trap) {
+    if(onoffx) return 1;
     return x6==2?15:x6==1?2:1;
   }
   if(delta) { 
@@ -2976,6 +3036,7 @@ function _mup(e) {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value;
       if(onoffx) {
         hexa?(p=26,_switch26(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
+        :trap?(p=21,_switch21(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points11(lx,ly),x6==6)))
         :delta?(p=29,_switch29(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points9(lx,ly),x6==6)))
         :tria4?(p=22,_switch22(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points5(lx,ly),x6==6)))
         :tria2?(p=27,_switch27(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points2(lx,ly),x6==6)))
@@ -3208,7 +3269,7 @@ function _mup(e) {
 function _switchx(x) {
   return x==2?_switch2:x==4?_switch4:x==5?_switch5
    :x==11?_switch11:x==15?_switch15:x==16?_switch16:x==18?_switch18:x==19?_switch19
-   :x==23?_switch22:x==24?_switch24:x==25?_switch25:x=26?_switch26:x==27?_switch27:x==28?_switch28:x==29?_switch29
+   :x==21?_switch21:x==22?_switch22:x==24?_switch24:x==25?_switch25:x=26?_switch26:x==27?_switch27:x==28?_switch28:x==29?_switch29
    :_switch14;
 }
 function _undo(n) {
