@@ -254,7 +254,7 @@ var cv1=document.getElementById("cv1");
 var ctx=cv1.getContext("2d");
 var grd,mp,mm,mm1,drawms,tdraw,design;
 
-var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,grdm=0;
+var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,grdm=0,grdx=15,grdy=16;
 var cell6x=40,cell6y=Math.round(cell6x*Math.sqrt(3)/2);
 var cell8y=60,cell8x=Math.round(cell8y*Math.sqrt(3)/2);
 var onoff=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,delta=0,trap=0,white=0,rou=0;
@@ -649,8 +649,10 @@ function monochg(e) {
   mono=mxa[1].checked?2:mxa[2].checked?e&&e.ctrlKey?22:21:mxa[3].checked?30:mxa[4].checked?31:mxa[5].checked?4:1;
   if(e) _drawboard(); 
 }
-function grdchg(i,t,e) {
-  grdm=f.grd1.checked*(e&&e.ctrlKey?2:1);
+function grdchg(i,t,e,x) {
+  if(!x) grdm=f.grd1.checked*(e&&e.ctrlKey?2:1);
+  if(tria||tria2||tria4) grdx=1,grdy=2;
+  else grdx=grdy=1;
   if(e) _drawboard();
 }
 function onoffchg(dr,m,src,e) { 
@@ -681,9 +683,10 @@ function whitechg(src,value) {
 function hexachg(e) {
   hexa=hxa[1].checked;tria=hxa[2].checked,tria2=hxa[3].checked,tria4=hxa[4].checked,penta=hxa[5].checked,cubes=hxa[6].checked,delta=hxa[7].checked,trap=hxa[8].checked;
   quad=!(hexa|tria|tria2|tria4|penta|cubes|delta|trap);
+  grdchg(0,0,0,1);
   if(e&&!depth) _resizea(),_drawboard();
 }
-function _sethex(i) { hxa[i].checked=true; hexachg(1); }
+function _sethex(i) { hxa[i].checked=true; hexachg(1);}
 function deschg(e) {
   for(var i=0;i<dxa.length;i++)
     if(dxa[i].checked) design=+dxa[i].value;
@@ -774,7 +777,7 @@ function _dub1(x,y,i) {
     if(i==4) return [x+b[8],y+b[9],1];
     if(i==5) return [x+b[10],y+b[11],2];
   } else if(tria) {
-    var d=1^(y&1)^(x&1),dy=d?-1:1;
+    var d=(1^y^x)&1,dy=d?-1:1;
     if(i==0) return d?[x,y-dy,0]:[x,y-dy,0];
     if(i==1) return d?[x-1,y,1]:[x+1,y,1];
     if(i==2) return d?[x+1,y,2]:[x-1,y,2];
@@ -835,8 +838,12 @@ function _dublock(x,y,e) {
     for(i=0,i2=10;i<6;i++,i2=(i2+2)%12)
       if((e&(1<<i))&&_xo(board[y2=y+b[i2+1]][x2=x+b[i2]])) r.push(_dub1(x,y,i));
   } else if(tria||tria2||tria4) {
-    var b=tria2?_border2:tria4?_border5:_border3(x,y),x2,y2,i,i2;
-    for(i=0,i2=4;i<3;i++,i2=(i2+2)%6)
+    var b=(tria2?_border2:tria4?_border5:_border3)(x,y),x2,y2,i,i2;
+    for(i=0,i2=0;i<3;i++,i2=(i2+2)%6)
+      if((e&(1<<i))&&_xo(board[y2=y+b[i2+1]][x2=x+b[i2]])) r.push(_dub1(x,y,i));
+  } else if(tria4) {
+    var b=(tria2?_border2:tria4?_border5:_border3)(x,y),x2,y2,i,i2;
+    for(i=0,i2=2;i<3;i++,i2=(i2+2)%6)
       if((e&(1<<i))&&_xo(board[y2=y+b[i2+1]][x2=x+b[i2]])) r.push(_dub1(x,y,i));
   } else if(trap||cubes||delta) {
     var b=trap?_border11(x,y):cubes?_border8(x,y):_border9(x,y),x2,y2,i,i2;
@@ -901,9 +908,13 @@ function _txt2block(x,y,e,r) {
     i=dd==0?2:dd==1?1:dd==2?0:dd==3?0:dd==4?3:3;
     if(i) e=rol(4,e,i,r);
   }
+  if(tria) {
+    var d=(x^y)&1;
+    e=rol(3,e,d?2:1,r);
+  }
   if(r) {
     if(quad) e&=3;
-    else if(tria) e&=1^(y&1)^(x&1)?3:4;
+    else if(tria) e&=3;
     else e&=7;
   }
   return e;
@@ -1046,14 +1057,38 @@ function _alloc(w,h) {
   }
 }
 
+function _radial(dx,dy,xy) {
+  var i,j,k,m=1/0,n=-1/0,x,sx,sy;
+  for(i=0;i<xy.length;i+=2) {
+    x=dx*xy[i]+dy*xy[i+1];
+    if(x<m) {j=i,m=x;if(!i) k=i,n=x;}
+    else if(x>n) k=i,n=x;
+  }
+  sx=xy[j],sy=xy[j+1],x=_sqr(sx-xy[k],sy-xy[k+1]);
+  return ctx.createRadialGradient(sx,sy,0,sx,sy,Math.sqrt(x));
+}
+function _linear(dx,dy,xy) {
+  var i,j,k,m=1/0,n=-1/0,x,sx,sy,tx,ty;
+  for(i=0;i<xy.length;i+=2) {
+    x=dx*xy[i]+dy*xy[i+1];
+    if(x<m) {j=i,m=x;if(!i) k=i,n=x;}
+    else if(x>n) k=i,n=x;
+  }
+  sx=xy[j],sy=xy[j+1];
+  x=(n-m)/_sqr(dx,dy);
+  return ctx.createLinearGradient(sx,sy,sx+x*dx,sy+x*dy);
+}
 function _brd(x,y) { var b=board[y];return b?(b=b[x],b&&b!=' '):0;}
 function _drawcell(x,y) {
   var sx=brd+x*cell,sy=brd+y*cell;
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[x&1]:mono==21?clr2[y&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr3[(x+9999-y)%3]:mono==31?clr3[(x+y)%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm=2) g=ctx.createRadialGradient(sx,sy,0,sx+cell/2,sy+cell/2,cell);
-    else g=ctx.createLinearGradient(sx,sy,sx+cell,sy+cell);
+    //if(grdm=2) g=ctx.createRadialGradient(sx,sy,0,sx+cell/2,sy+cell/2,cell);
+    //else g=ctx.createLinearGradient(sx,sy,sx+cell,sy+cell);
+    var xy=[sx,sy,sx+cell,sy,sx+cell,sy+cell,sx,sy+cell];
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1241,8 +1276,10 @@ function _drawcell16(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[(x+2-(y&1)-(y/2)&1)&1]:mono==21?clr2[(x+(y&1)+y/2)&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[6],xy[7]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[6],xy[7]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1283,38 +1320,69 @@ function _points3(x,y) {
 
 function _border3(x,y) {
   var d=1^(y&1)^(x&1),dy=d?-1:1;
-  return d?[-1,0,1,0,0,dy]:[1,0,-1,0,0,dy];
+  return d?[0,-dy,-1,0,1,0]:[0,-dy,1,0,-1,0];
 }
 
-function _drawcell6y(x,y) {
+function _drawcell3(x,y) {
   var xy=_points3(x,y);
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[((x+y)/2)&1]:mono==21?clr2[x&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
+  _drawcell3x(x,y,xy,c,_border3);
+}
+
+function _drawcell3x(x,y,xy,c,border) {
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
   } else
     ctx.fillStyle=c;
-  ctx.beginPath();
-  ctx.moveTo(xy[0],xy[1]);
-  ctx.lineTo(xy[2],xy[3]);
-  ctx.lineTo(xy[4],xy[5]);
-  ctx.closePath();
-  ctx.fill();
-  ctx.lineWidth=0.5;
-  ctx.stroke();
+  if(rou) {
+    var i,i,b2=border(x,y),b=[],lx,ly,nx,ny;
+    for(i1=i=0;i<6;i1++,i+=2) b[i1]=_brd(x+b2[i],y+b2[i+1]);
+    b.push(b[0]);
+    xy.push(xy[0],xy[1]);
+    ctx.beginPath();
+    ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
+    for(i1=i=0;i<6;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth=0.5;
+    b.push(b[0]);b.shift();
+    for(i1=i=0;i<6;i1++,i+=2) if(b[i1]) _line(xy[i],xy[i+1],xy[i+2],xy[i+3]);
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(xy[0],xy[1]);
+    ctx.lineTo(xy[2],xy[3]);
+    ctx.lineTo(xy[4],xy[5]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+  }
 }
 
 function _drawcell2(x,y) {
   var xy=_points2(x,y);
   var c=ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
+  _drawcell3x(x,y,xy,c,_border2);
+}
+
+
+function _drawcell2x(x,y) {
+  var xy=_points2(x,y);
+  var c=ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1336,21 +1404,39 @@ function _drawcell5(x,y) {
   var c=mono==2?clr2[(x2^y2^tx)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[1^y&1]:mono==4?clr4['0312'[r]]:mono==30?clr2[+!tx]:mono==31?clr3[(3+dx%3+((dy>>1)&1))%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
   } else
     ctx.fillStyle=c;
-  ctx.beginPath();
-  ctx.moveTo(xy[0],xy[1]);
-  ctx.lineTo(xy[2],xy[3]);
-  ctx.lineTo(xy[4],xy[5]);
-  ctx.closePath();
-  ctx.fill();
-  ctx.lineWidth=0.5;
-  ctx.stroke();
+  if(rou) {
+    var i,i,b2=_border5(x,y),b=[],lx,ly,nx,ny;
+    for(i1=i=0;i<6;i1++,i+=2) b[i1]=_brd(x+b2[i],y+b2[i+1]);
+    b.push(b[0]);
+    xy.push(xy[0],xy[1]);
+    ctx.beginPath();
+    ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
+    for(i1=i=0;i<6;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.lineWidth=0.5;
+    b.push(b[0]);b.shift();
+    for(i1=i=0;i<6;i1++,i+=2) if(b[i1]) _line(xy[i],xy[i+1],xy[i+2],xy[i+3]);
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(xy[0],xy[1]);
+    ctx.lineTo(xy[2],xy[3]);
+    ctx.lineTo(xy[4],xy[5]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.lineWidth=0.5;
+    ctx.stroke();
+  }
 }
 
 function _drawcell15(x,y) {
@@ -1358,8 +1444,10 @@ function _drawcell15(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*v+x1]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1372,7 +1460,7 @@ function _drawcell15(x,y) {
     b.push(b[0]);
     xy.push(xy[0],xy[1]);
     ctx.moveTo(nx=(xy[0]+xy[8])/2,ny=(xy[1]+xy[9])/2);
-    for(i1=i=0;i<10;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+    for(i1=i=0;i<10;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
@@ -1398,8 +1486,10 @@ function _drawcell8(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[d]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1412,7 +1502,7 @@ function _drawcell8(x,y) {
     b.push(b[0]);
     xy.push(xy[0],xy[1]);
     ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
-    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell8y/4);
+    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
@@ -1437,8 +1527,10 @@ function _drawcell11(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1451,7 +1543,7 @@ function _drawcell11(x,y) {
     b.push(b[0]);
     xy.push(xy[0],xy[1]);
     ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
-    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell8y/4);
+    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
@@ -1515,8 +1607,10 @@ function _drawcell9(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[d]:'#fff';
   if(grdm) {
     var g;
-    if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
+    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
+    if(grdm==2) g=_radial(grdx,grdy,xy);
+    else g=_linear(grdx,grdy,xy);
+    //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
     ctx.fillStyle=g;
@@ -1529,7 +1623,7 @@ function _drawcell9(x,y) {
     b.push(b[0]);
     xy.push(xy[0],xy[1]);
     ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
-    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell8y/4);
+    for(i1=i=0;i<8;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
@@ -1604,7 +1698,7 @@ function _drawpeg15(x,y,wh,p) {
       o.push(o[0]);xy.push(xy[0],xy[1]);
       ctx.moveTo(nx=(xy[0]+xy[8])/2,ny=(xy[1]+xy[9])/2);
       for(i1=i=0;i<10;i1++,i+=2)
-        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     } else 
       _polyex(_points15(x,y),0.75);
   } else {
@@ -1627,7 +1721,7 @@ function _drawpeg8(x,y,wh,p) {
       o.push(o[0]);xy.push(xy[0],xy[1]);
       ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
       for(i1=i=0;i<8;i1++,i+=2)
-        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     } else 
       _polyex(_points8(x,y),0.75);
   } else {
@@ -1650,7 +1744,7 @@ function _drawpeg9(x,y,wh,p) {
       o.push(o[0]);xy.push(xy[0],xy[1]);
       ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
       for(i1=i=0;i<8;i1++,i+=2)
-        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     } else 
       _polyex(_points9(x,y),0.75);
   } else {
@@ -1673,7 +1767,7 @@ function _drawpeg11(x,y,wh,p) {
       o.push(o[0]);xy.push(xy[0],xy[1]);
       ctx.moveTo(nx=(xy[0]+xy[6])/2,ny=(xy[1]+xy[7])/2);
       for(i1=i=0;i<8;i1++,i+=2)
-        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell7/3);
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     } else 
       _polyex(_points11(x,y),0.75);
   } else {
@@ -1708,19 +1802,37 @@ function _drawpeg16(x,y,wh,p) {
 }
 
 function _drawpeg3(x,y,wh,p) {
-  var d=1^(y&1)^(x&1),dy=d?-1:1,sx=brd+(x+1)*cell3x/2,sy=brd+(y+d)*cell3y;
+  _drawpeg3x(x,y,wh,p,_points3,_border3);
+}
+function _drawpeg3x(x,y,wh,p,points,border) {
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
   ctx.fillStyle=wh?'#fff':'#000';
-  if(p) 
-    _polyex(_points3(x,y),0.75);
-  else 
-    ctx.arc(sx,sy+dy*cell3y/3,cell3y*36/128,0,2*Math.PI);
+  if(p) {
+    if(rou) {
+      var xy=_polyex2(points(x,y),0.75),b=border(x,y);
+      var i,i1,o=[],lx,ly,nx,ny;
+      for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+      o.push(o[0]);xy.push(xy[0],xy[1]);
+      ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
+      for(i1=i=0;i<6;i1++,i+=2)
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
+    } else 
+      _polyex(points(x,y),0.75);
+  } else {
+    var p=_peg(x,y);
+    ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
+  }
+  ctx.closePath();
   ctx.fill();
   if(wh) ctx.stroke();
+
 }
 
 function _drawpeg2(x,y,wh,p) {
+  _drawpeg3x(x,y,wh,p,_points2,_border2);
+}
+function _drawpeg2x(x,y,wh,p) {
   var xy=_points2(x,y),sx=(45*xy[0]+19*(xy[2]+xy[4]-xy[0]))/64,sy=(45*xy[1]+19*(xy[3]+xy[5]-xy[1]))/64;
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
@@ -1737,6 +1849,33 @@ function _drawpeg2(x,y,wh,p) {
 }
 
 function _drawpeg5(x,y,wh,p) {
+  _drawpeg3x(x,y,wh,p,_points5,_border5);
+}
+function _drawpeg5x(x,y,wh,p) {
+  if(wh) ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.fillStyle=wh?'#fff':'#000';
+  if(p) {
+    if(rou) {
+      var xy=_polyex2(_points5(x,y),0.75),b=_border5(x,y);
+      var i,i1,o=[],lx,ly,nx,ny;
+      for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+      o.push(o[0]);xy.push(xy[0],xy[1]);
+      ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
+      for(i1=i=0;i<6;i1++,i+=2)
+        lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
+    } else 
+      _polyex(_points5(x,y),0.75);
+  } else {
+    var p=_peg(x,y);
+    ctx.arc(p[0],p[1],p[2],0,2*Math.PI);
+  }
+  ctx.closePath();
+  ctx.fill();
+  if(wh) ctx.stroke();
+}
+
+function _drawpeg5xx(x,y,wh,p) {
   var xy=_points5(x,y),sx=(26*xy[0]+19*(xy[2]+xy[4]))/64,sy=(26*xy[1]+19*(xy[3]+xy[5]))/64;
   if(wh) ctx.lineWidth=2;
   ctx.beginPath();
@@ -1747,7 +1886,7 @@ function _drawpeg5(x,y,wh,p) {
     else if(r==3) dx=-d;else dx=d;
     _polyex(xy,0.70,dx,dy);
   } else 
-    ctx.arc(sx,sy,cell*9/32,0,2*Math.PI);
+    ctx.arc(sx,sy,cell*8/32,0,2*Math.PI);
   ctx.fill();
   if(wh) {
     ctx.lineJoin='round';
@@ -1774,21 +1913,17 @@ function _circle(r,x,y) { _arc(x,y,r,0,360);}
 function _circle2(r,x,y,x2,y2) { _circle(r,x,y),_circle(r,x2,y2);}
 function _arc2(c,x,y,x2,y2,r) { if(c) ctx.lineTo(x,y),ctx.lineTo(x2,y2);else ctx.arcTo(x,y,x2,y2,r); }
 function _bez(x,y,x1,y1,x2,y2,r) { 
-  var x3=(x1+x2)/2,y3=(y1+y2)/2;
+  var r1=1-r;
   ctx.beginPath();
   ctx.moveTo(x,y);
-  ctx.bezierCurveTo((2*x1+x)/3,(2*y1+y)/3,(2*x1+x2)/3,(2*y1+y2)/3,x2,y2);
-  //ctx.bezierCurveTo(x1,y1,x1,y1,x2,y2);
-  //ctx.arcTo(x1,y1,x2,y2,r);
+  ctx.bezierCurveTo(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2);
   ctx.stroke();
 }
 function _bez2(c,x,y,x1,y1,x2,y2,r) { 
   if(c) ctx.lineTo(x1,y1),ctx.lineTo(x2,y2);
   else {
-   var x3=(x1+x2)/2,y3=(y1+y2)/2;
-   ctx.bezierCurveTo((2*x1+x)/3,(2*y1+y)/3,(2*x1+x2)/3,(2*y1+y2)/3,x2,y2);
-   //ctx.bezierCurveTo(x1,y1,x1,y1,x2,y2);
-   //ctx.arcTo(x1,y1,x2,y2,r);
+   var r1=1-r;
+   ctx.bezierCurveTo(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2);
   }
 }
 
@@ -1864,10 +1999,24 @@ function _drawborder16(x,y) {
 }*/
 
 function _drawborder3(x,y) {
-  var xy=_points3(x,y),d=1^(y&1)^(x&1),dy=d?-1:1,i,j,e=_getblock(x,y);
-  if(!_xo(board[y][x-1])) d?(i=0,j=2):(i=2,j=4),_line(xy[i],xy[i+1],xy[j],xy[j+1]);
-  if(!_xo(board[y][x+1])) d?(i=2,j=4):(i=0,j=2),_line(xy[i],xy[i+1],xy[j],xy[j+1]);
-  if(!_xo(board[y-dy][x])) _line(xy[4],xy[5],xy[0],xy[1]);
+  _drawborder3x(x,y,_points3,_border3);
+}
+function _drawborder3x(x,y,points,border) {
+  var xy=points(x,y),b=border(x,y),d=1^(y&1)^(x&1),dy=d?-1:1,i,j,e=_getblock(x,y);
+  if(rou) {
+    var i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i<6;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
+      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else 
+    for(i=0,i2=4;i<6;i2=i,i+=2)
+      if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
     var i,i2,i3;
     _polyex2(xy,15/16,0,0);
@@ -1880,6 +2029,10 @@ function _drawborder3(x,y) {
 }
 
 function _drawborder2(x,y) {
+  _drawborder3x(x,y,_points2,_border2);
+}
+
+function _drawborder2x(x,y) {
   var xy=_points2(x,y),dy=0^(y&1)^(x&1)^(((x+1)>>1)&1)?+1:-1,d,p1,p2,xx=(x+1+2*(y&1))&3,e=_getblock(x,y);
   if(!_xo(board[y][x-1])) p1=xx==0?4:xx==1?2:xx==2?0:2,p2=(p1+2)%6,_line(xy[p1],xy[p1+1],xy[p2],xy[p2+1]);
   if(!_xo(board[y][x+1])) p1=xx==0?2:xx==1?4:xx==2?2:0,p2=(p1+2)%6,_line(xy[p1],xy[p1+1],xy[p2],xy[p2+1]);
@@ -1896,10 +2049,21 @@ function _drawborder2(x,y) {
 }
 
 function _drawborder5(x,y) {
-  var xy=_points5(x,y),r=(((y+1)&1)<<1)|((x+1)&1),d,p1,p2,e=_getblock(x,y);
-  if(!_xo(board[y+(r==0?1:r==3?-1:0)][x+(r==1?-1:r==2?1:0)])) _line(xy[0],xy[1],xy[2],xy[3]);
-  if(!_xo(board[y+(r==1?1:r==2?-1:0)][x+(r==0?1:r==3?-1:0)])) _line(xy[4],xy[5],xy[0],xy[1]);
-  if(!_xo(board[y+(r==1||r==3?-1:1)][x+(r==2||r==3?1:-1)])) _line(xy[2],xy[3],xy[4],xy[5]);
+  var xy=_points5(x,y),b=_border5(x,y),r=(((y+1)&1)<<1)|((x+1)&1),d,p1,p2,e=_getblock(x,y);
+  if(rou) {
+    var i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i<6;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
+      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else 
+    for(i=0,i2=4;i<6;i2=i,i+=2)
+      if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
     var i,i2,i3;
     _polyex2(xy,15/16,0,0);
@@ -1920,7 +2084,7 @@ function _drawborder15(x,y) {
     o.push(o[0]);
     xy.push(xy[0],xy[1],xy[2],xy[3]);
     for(i1=i=0;i<10;i1++,i+=2) {
-      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
       else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
     }
@@ -1947,7 +2111,7 @@ function _drawborder8(x,y) {
     o.push(o[0]);
     xy.push(xy[0],xy[1],xy[2],xy[3]);
     for(i1=i=0;i<8;i1++,i+=2) {
-      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
       else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
     }
@@ -1974,7 +2138,7 @@ function _drawborder9(x,y) {
     o.push(o[0]);
     xy.push(xy[0],xy[1],xy[2],xy[3]);
     for(i1=i=0;i<8;i1++,i+=2) {
-      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
       else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
     }
@@ -2001,7 +2165,7 @@ function _drawborder11(x,y) {
     o.push(o[0]);
     xy.push(xy[0],xy[1],xy[2],xy[3]);
     for(i1=i=0;i<8;i1++,i+=2) {
-      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,cell7/3);
+      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
       else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
     }
@@ -2028,7 +2192,7 @@ function _drawboard() {
   for(y=0;y<ny;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
       if((c=b[x])!=' ') {
-        trap?_drawcell11(x,y):delta?_drawcell9(x,y):cubes?_drawcell8(x,y):penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell6y(x,y):hexa?_drawcell16(x,y):_drawcell(x,y);
+        trap?_drawcell11(x,y):delta?_drawcell9(x,y):cubes?_drawcell8(x,y):penta?_drawcell15(x,y):tria4?_drawcell5(x,y):tria2?_drawcell2(x,y):tria?_drawcell3(x,y):hexa?_drawcell16(x,y):_drawcell(x,y);
         if((w=c=='w')||c=='o') {
           n+=onoff?c=='o':c=='o'||w,trap?_drawpeg11(x,y,w,p):delta?_drawpeg9(x,y,w,p):cubes?_drawpeg8(x,y,w,p):penta?_drawpeg15(x,y,w,p):tria4?_drawpeg5(x,y,w,p):tria2?_drawpeg2(x,y,w,p):tria?_drawpeg3(x,y,w,p):hexa?_drawpeg16(x,y,w,p):_drawpeg(x,y,w,p);
           m+=onoff?c=='o':+_can(x,y,0,1)+_can(x,y,0,-1)+_can(x,y,1,0)+_can(x,y,-1,0)+(diag?_can(x,y,1,-1)+_can(x,y,1,1)+_can(x,y,-1,-1)+_can(x,y,-1,1):0);
@@ -2225,13 +2389,13 @@ function _peg(x,y) {
     return [sx+(v?x1?c4-d:c2+c4+d:c2),sy+(v?c2:x1?c4-d:c2+c4+d),c4+2];
   } else if(tria2) {
     var xy=_points2(x,y),sx=(45*xy[0]+19*(xy[2]+xy[4]-xy[0]))/64,sy=(45*xy[1]+19*(xy[3]+xy[5]-xy[1]))/64;
-    return [sx,sy];
+    return [sx,sy,cell*9/32];
   } else if(tria4) {
     var xy=_points5(x,y),sx=(26*xy[0]+19*(xy[2]+xy[4]))/64,sy=(26*xy[1]+19*(xy[3]+xy[5]))/64;
-    return [sx,sy];
+    return [sx,sy,cell*8/32];
   } else if(tria) {
     var d=1^(y&1)^(x&1),dy=d?-1:1,sx=brd+(x+1)*cell3x/2,sy=brd+(y+d)*cell3y;
-    return [sx,sy+dy*cell3y/3];
+    return [sx,sy+dy*cell3y/3,cell3y*36/128];
   } else if(hexa) {
     var sx=brd+(x+(y&1)/2)*cell6y,sy=brd+((1+y*3)/4)*cell6x,x2=cell6y/2,y2=cell6x/4;
     return [sx+x2,sy+y2,x2-3];
@@ -2556,10 +2720,10 @@ function _switch2(x,y,u) {
 
 function _border5(x,y) {
   var r=(((1^y)&1)<<1)|(1^x&1);
-  if(r==1) return [-1,0,-1,-1,0,1];
-  else if(r==2) return [0,-1,1,1,1,0];
+  if(r==1) return [0,1,-1,0,-1,-1];
+  else if(r==2) return [0,-1,1,0,1,1];
   else if(r==3) return [-1,0,0,-1,1,-1];
-  else return [-1,1,1,0,0,1];
+  else return [1,0,0,1,-1,1];
 }
 
 function _switch5(x,y,u) {
