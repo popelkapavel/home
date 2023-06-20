@@ -1387,7 +1387,8 @@ function _drawcell3x(x,y,xy,c,border) {
     xy.push(xy[0],xy[1]);
     ctx.beginPath();
     ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
-    for(i1=i=0;i<6;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
+    if(tria) for(i1=i=0;i<6;i1++,i+=2) lx=nx,ly=ny,_arc2(b[i1]||b[i1+1],xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell3y/3);
+    else for(i1=i=0;i<6;i1++,i+=2) lx=nx,ly=ny,_bez2(b[i1]||b[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
@@ -1854,7 +1855,10 @@ function _drawpeg3x(x,y,wh,p,points,border) {
       for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
       o.push(o[0]);xy.push(xy[0],xy[1]);
       ctx.moveTo(nx=(xy[0]+xy[4])/2,ny=(xy[1]+xy[5])/2);
+      if(tria) 
       for(i1=i=0;i<6;i1++,i+=2)
+        lx=nx,ly=ny,_arc2(o[i1]||o[i1+1],xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,cell3y*0.75/3);
+      else for(i1=i=0;i<6;i1++,i+=2)
         lx=nx,ly=ny,_bez2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,0.125);
     } else 
       _polyex(points(x,y),0.75);
@@ -1942,14 +1946,14 @@ function _line(x,y,x2,y2) {
     ctx.stroke();
 }
 function _rline(x,y,dx,dy) { _line(x,y,x+dx,y+dy);}
-function _arc(x,y,r,a,d) { 
+function _arc(x,y,r,a,d,f) { 
   var b=a+d;
   ctx.beginPath();
   ctx.arc(x,y,r,Math.PI*a/180,Math.PI*b/180);
-  ctx.stroke();
+  if(f) ctx.fill();else ctx.stroke();
 }
-function _circle(r,x,y) { _arc(x,y,r,0,360);}
-function _circle2(r,x,y,x2,y2) { _circle(r,x,y),_circle(r,x2,y2);}
+function _circle(r,x,y,f) { _arc(x,y,r,0,360,f);}
+function _circle2(r,x,y,x2,y2,f) { _circle(r,x,y,f),_circle(r,x2,y2,f);}
 function _arc2(c,x,y,x2,y2,r) { if(c) ctx.lineTo(x,y),ctx.lineTo(x2,y2);else ctx.arcTo(x,y,x2,y2,r); }
 function _bez(x,y,x1,y1,x2,y2,r) { 
   var r1=1-r;
@@ -1964,6 +1968,14 @@ function _bez2(c,x,y,x1,y1,x2,y2,r) {
    var r1=1-r;
    ctx.bezierCurveTo(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2);
   }
+}
+
+function _borderedge(e,xy2) {
+ var m,i;
+ e=e|rol(xy2.length>>1,e,-1);
+ for(m=1,i=0;i<xy2.length;i+=2,m<<=1) 
+   if(e&m)
+     _circle(4,xy2[i],xy2[i+1],1);
 }
 
 function _drawborder(x,y) {
@@ -1991,10 +2003,11 @@ function _drawborder(x,y) {
     if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
   }
   if(e) {
-    if(e&1) _line(sx+1,sy,sx+1,sy+cell),_circle2(1,sx,sy,sx,sy+cell);
-    if(e&2) _line(sx,sy,sx+cell,sy),_circle2(1,sx,sy,sx+cell,sy);
-    if(e&4) _line(sx+cell-1,sy,sx+cell-1,sy+cell),_circle2(1,sx+cell-1,sy,sx+cell-1,sy+cell);
-    if(e&8) _line(sx,sy+cell-1,sx+cell,sy+cell-1),_circle2(1,sx,sy+cell-1,sx+cell,sy+cell-1);
+    if(e&1) _line(sx+1,sy,sx+1,sy+cell);
+    if(e&2) _line(sx,sy,sx+cell,sy);
+    if(e&4) _line(sx+cell-1,sy,sx+cell-1,sy+cell);
+    if(e&8) _line(sx,sy+cell-1,sx+cell,sy+cell-1);
+    _borderedge(e,[sx,sy,sx+cell,sy,sx+cell,sy+cell,sx,sy+cell]);
   }
 }
 
@@ -2018,13 +2031,15 @@ function _drawborder16(x,y) {
   } else for(i=0,i2=10;i<12;i2=i,i+=2)
     if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(12,4);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(i=0,i2=10;i<6;i++,i2=(i2+2)%12) if(e&(1<<i)) {
       i3=(i2+2)%12;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 /*function _drawborder6old(x,y) {
@@ -2043,14 +2058,16 @@ function _drawborder3(x,y) {
 function _drawborder3x(x,y,points,border) {
   var xy=points(x,y),b=border(x,y),d=1^(y&1)^(x&1),dy=d?-1:1,i,j,e=_getblock(x,y);
   if(rou) {
-    var i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
+    var i2,i1,a,cx=(xy[0]+xy[6])/2,cy=(xy[1]+xy[7])/2,r=Math.sqrt(_sqr((xy[0]+xy[2])/2-cx,(xy[1]+xy[3])/2-cy)),o=[];
     for(i1=i=0;i<6;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
     o.push(o[0]);o.shift();
     o.push(o[0]);
     xy.push(xy[0],xy[1],xy[2],xy[3]);
     for(i1=i=0;i<6;i1++,i+=2) {
-      if(!o[i1]&&!o[i1+1]) _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
-      else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      if(!o[i1]&&!o[i1+1]) {
+        if(tria) i2=i+4,_arc((xy[i2]+xy[i]+xy[i+2])/3,(xy[i2+1]+xy[i+1]+xy[i+3])/3,cell3y/3,d?i*60+210:i*60+30,120);
+        else _bez((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,0.125);
+      } else if(!o[i1]) _line((xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) _line((xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
     }
   } else 
@@ -2212,13 +2229,14 @@ function _drawborder11(x,y) {
     for(i=0,i2=6;i<8;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(8,4);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(i=0,i2=6;i<4;i++,i2=(i2+2)%8) if(e&(1<<i)) {
       i3=(i2+2)%8;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2238,6 +2256,7 @@ function _drawboard() {
         }
       }
   ctx.lineWidth=2;
+  ctx.fillStyle='#000';
   for(y=1;y<ny;y++)
     for(x=1;x<nx;x++)
       if((b=board[y])&&(c=b[x])&&c!=' ') 
@@ -2263,51 +2282,150 @@ function _svgpoly(w,c,xy) {
   return '<polygon points="'+s+'" style="fill:'+c+';stroke:#000;stroke-width:'+w+';" />\r\n';
 }
 
-function _svgcell(x,y) {
-  var s,c=_color(x,y);
-  if(quad) {
+function _svg_arc(w,x,y,x2,y2,r) { 
+  var r1=1-r;
+  return '<path d="M'+x+','+y+' A'+r+','+r+' 0 0 1 '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
+}
+
+function _svg_arc2(c,x,y,x1,y1,x2,y2,r) { 
+  if(c) return ' L'+x1+','+y1+' L'+x2+','+y2;
+  else {
+   return ' A'+r+','+r+' '+' 0 0 1 '+x2+','+y2;
+  }
+}
+
+function _svg_bez(w,x,y,x1,y1,x2,y2,r) { 
+  var r1=1-r;
+  return '<path d="M'+x+','+y+' C'+(r1*x1+r*x)+','+(r1*y1+r*y)+' '+(r1*x1+r*x2)+','+(r1*y1+r*y2)+' '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
+}
+
+function _svg_bez2(c,x,y,x1,y1,x2,y2,r) { 
+  if(c) return ' L'+x1+','+y1+' L'+x2+','+y2;
+  else {
+   var r1=1-r;
+   return ' C'+(r1*x1+r*x)+','+(r1*y1+r*y)+' '+(r1*x1+r*x2)+','+(r1*y1+r*y2)+' '+x2+','+y2;
+  }
+}
+
+function _svg_path(w,c,xy,o,rr) {
+  var s,i,i1,lx,ly,nx,ny,f2=quad||hexa||tria?_svg_arc2:_svg_bez2;
+  o.push(o[0]);xy.push(xy[0],xy[1]);
+  nx=(xy[0]+xy[xy.length-4])/2,ny=(xy[1]+xy[xy.length-3])/2;
+  s='M'+nx+','+ny;
+  for(i1=i=0;i+2<xy.length;i1++,i+=2)
+    lx=nx,ly=ny,s+=f2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,rr);
+  s='<path d="'+s+' Z" style="fill:'+c+';stroke:#000;stroke-width:'+w+';" />\r\n';
+  return s;
+}
+
+function _svg_linear(n,c,dx,dy) {
+  var s,a=0|(Math.atan2(dy,dx)*180/Math.PI);
+  s='<linearGradient id="'+n+'" gradientTransform="rotate('+a+')">\r\n';
+  s+='<stop offset="0%" stop-color="#fff" />\r\n'
+  s+='<stop offset="100%" stop-color="'+c+'" />\r\n';
+  s+='</linearGradient>\r\n';
+  return s;
+}
+
+function _svg_radial(n,c,dx,dy) {
+  var s,a=Math.atan2(dy,dx),x=Math.cos(a),y=Math.sin(a),e,f;
+  e=Math.abs(x),f=Math.abs(y);
+  if(e<f) e=f;
+  //x/=e,y/=e;
+  x=Math.round(50*(1-x)),y=Math.round(50*(1-y));
+  s='<radialGradient id="'+n+'" cx="'+x+'%" cy="'+y+'%" r="100%" >\r\n';
+  s+='<stop offset="0%" stop-color="#fff" />\r\n'
+  s+='<stop offset="100%" stop-color="'+c+'" />\r\n';
+  s+='</radialGradient>\r\n';
+  return s;
+}
+
+var svgg={};
+function _svgcell(x,y,rr) {
+  var s='',c=_color(x,y);
+  if(grdm) { 
+   if(c=='#fff') c=clr2[1];
+   var gn=c.replace('#','x'),g=svgg[gn];
+   if(!g) s+=svgg[gn]='<defs>'+(grdm==2?_svg_radial:_svg_linear)(gn,c,grdx,grdy)+'</defs>\r\n';
+   c='url(#'+gn+')';
+  }
+  if(quad&&!rou) {
     var sx=brd+x*cell,sy=brd+y*cell;
-    s='<rect x="'+sx+'" y="'+sy+'" width="'+cell+'" height="'+cell+'" style="fill:'+c+';stroke:#000;stroke-width:0.5;" />\r\n';
+    s+='<rect x="'+sx+'" y="'+sy+'" width="'+cell+'" height="'+cell+'" style="fill:'+c+';stroke:#000;stroke-width:0.5;" />\r\n';
   } else {
     var xy=_points(x,y);
-    s=_svgpoly(0.5,c,xy);
+    if(rou) {
+      var i,i1,o=[],lx,ly,nx,ny,r=[],r=_border(x,y),s2='';
+      for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+r[i],y+r[i+1]);
+      s+=_svg_path(0.5,c,xy,o,rr);
+    } else 
+      s+=_svgpoly(0.5,c,xy);
   }
   return s;
 }
 
-function _svgborder(x,y) {
-  var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y);
-  for(i=0,i2=b.length-2;i<xy.length;i2=i,i+=2) {
-    if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_svgline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
-  }
+function _svgborder(x,y,rr) {
+  var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y),n=xy.length;
+  if(rou) {
+    var i1,a,o=[];
+    for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i+4<xy.length;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) {
+         if(quad||hexa||tria) {
+           var ar=tria?cell3y/3:hexa?cell6x/2:cell/2;
+           s+=_svg_arc(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,ar);
+         } else s+=_svg_bez(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,rr);
+      } else if(!o[i1]) s+=_svgline(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) s+=_svgline(2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else
+    for(i=0,i2=b.length-2;i<xy.length;i2=i,i+=2) {
+      if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_svgline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
+    }
   if(e) {
-    var i,m,i2,i3;
+    xy.splice(n,4);
+    var i,m,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(m=1,i=0,i2=b.length-2;i<xy.length;i2=i,i+=2,m<<=1) 
-      if(e&m) {
+      if(e&m) 
         s+=_svgline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
-        s+=_svgcircle(2,'#000',1,xy[i],xy[i+1]);
-        s+=_svgcircle(2,'#000',1,xy[i2],xy[i2+1]);
-      }
+    e=e|rol(xy2.length>>1,e,-1);
+    for(m=1,i=0;i<xy2.length;i+=2,m<<=1) 
+      if(e&m)
+        s+=_svgcircle(3,'#000',1,xy2[i],xy2[i+1]);
   }
   return s;
 }
 
 function _svg() {
-  var c,x,y,nx=board[0].length-1,ny=board.length-1;
-  var s='';
-  for(y=0;y<ny;y++)
+  var c,x,y,ey=board.length-1;
+  var s='',p=f.peg.checked,rr=tria?cell3y/3:hexa?cell6x/2:quad?cell/2:0.125,rr2=rr>0?rr*0.75:rr;
+  svgg={};
+  for(y=0;y<ey;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
       if((c=b[x])>' ') {
-        s+=_svgcell(x,y)+'\r\n';
+        s+=_svgcell(x,y,rr)+'\r\n';
         if(c!='x') {
-          var p=_peg(x,y);
-          s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+p[2]+'" style="fill:'+(c=='w'?'#fff':'#000')+';stroke:#000;" />\r\n';
-        }
+          if(p) {
+            var xy=_polyex2(_points(x,y),0.75),cc=c=='w'?'#fff':'#000';
+            if(rou) {
+              var i,i1,o=[],r=_border(x,y);
+              for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+r[i],y+r[i+1]);
+              s+=_svg_path(2,cc,xy,o,rr2);
+            } else 
+              s+=_svgpoly(2,cc,xy);
+          } else {
+            var g=_peg(x,y);
+            s+='<circle cx="'+g[0]+'" cy="'+g[1]+'" r="'+g[2]+'" style="fill:'+(c=='w'?'#fff':'#000')+';stroke:#000;" />\r\n';
+          }
       }
-  for(y=0;y<ny;y++)
+    }
+  for(y=0;y<ey;y++)
     for(x=0,b=board[y],xe=b.length;x<xe;x++)
-      if((c=b[x])>' ') s+=_svgborder(x,y)+'\r\n';
+      if((c=b[x])>' ') s+=_svgborder(x,y,rr)+'\r\n';
   return s;
 }
 
@@ -2640,7 +2758,7 @@ function _mdesign(dm,up,mu,ev) {
  _drawboard();
 }
 function _mmove(e,d) {
-  if(!e.buttons) return;
+  if(!e.buttons||!mp) return;
   var xy=_mxy(e),mm2=mm,b=board[xy[1]],bp=board[mp[1]],bc=bp&&bp[mp[0]],dm,r;
   if(design==7) xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),0,128);
   dm=_design(e);
@@ -3472,6 +3590,7 @@ function _mask(x6,x,y,p3) {
 }
 
 function _mup(e) {
+  if(!mp) return;
   mm1=0;
   e.preventDefault();
   sele=[];
