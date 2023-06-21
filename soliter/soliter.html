@@ -167,6 +167,7 @@ OOOOOOO  OOOOOOOOO
  <input type=button value=Save onclick=_file_save() title="save text to disk file ..."/>
  <br>
  <input type=button value=svg onclick=_svg_save() title="export svg to disk file ..."/>
+ <input type=button value=pdf onclick=_pdf_save() title="export pdf to disk file ..."/>
 </td> <td style=vertical-align:top >
 <canvas id="cv1" width="640" height="480" style="border:1px solid black;"></canvas>
 <br>
@@ -2487,6 +2488,236 @@ function _svg_save() {
   a.click();
 }
 
+var pdfh=0;
+function _pdfx(x) { return Math.round(x*1000)/1000; }
+function _pdfy(y) { return Math.round((pdfh-y)*1000)/1000; }
+
+function _pdfm(x,y) { return ''+_pdfx(x)+' '+_pdfy(y)+' m'; }
+function _pdfl(x,y) { return ''+_pdfx(x)+' '+_pdfy(y)+' l'; }
+function _pdfc(x1,y1,x2,y2,x3,y3) {
+  return _pdfx(x1)+' '+_pdfy(y1)+' '+_pdfx(x2)+' '+_pdfy(y2)+' '+_pdfx(x3)+' '+_pdfy(y3)+' c';
+}
+function _pdf_color(c) {
+  var i=parseInt(c.substring(1),16),r,g,b;
+  r=17*((i>>8)&15),g=17*((i>>4)&15),b=17*((i>>0)&15);
+  return ''+_pdfx(r/255)+' '+_pdfx(g/255)+' '+_pdfx(b/255);
+}
+function _pdfline(w,x,y,x2,y2) {
+  //return '<line x1="'+x+'" y1="'+y+'" x2="'+x2+'" y2="'+y2+'" style="stroke:#000;stroke-width:'+w+';" />\r\n';
+  return ' '+w+' w '+_pdfm(x,y)+' '+_pdfl(x2,y2)+' S\r\n';
+}
+function _pdfcircle(x,y,r) {
+  var x0=x-r,y0=y-r,x1=x+r,y1=y+r,m,s=_pdfm(x0,y);
+  m=4*(Math.sqrt(2)-1)/3*r;
+  s+=' '+_pdfc(x0,y-m,x-m,y0,x,y0);
+  s+=' '+_pdfc(x+m,y0,x1,y-m,x1,y);
+  s+=' '+_pdfc(x1,y+m,x+m,y1,x,y1);
+  s+=' '+_pdfc(x-m,y1,x0,y+m,x0,y);
+  return s+' b\r\n';
+}
+
+function _pdf_arc(w,x,y,x2,y2,r) { 
+  var r1=1-r;
+  //return '<path d="M'+x+','+y+' A'+r+','+r+' 0 0 1 '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
+  return ' '+_pdfm(x,y)+' '+_pdfl(x2,y2)+' b';
+}
+
+function _pdf_arc2(c,x,y,x1,y1,x2,y2,r) { 
+  if(c) return  ' '+_pdfl(x1,y1)+' '+_pdfl(x2,y2);
+  else {
+   //return ' A'+r+','+r+' '+' 0 0 1 '+x2+','+y2;
+   return  ' '+_pdfl(x1,y1)+' '+_pdfl(x2,y2);
+  }
+}
+
+function _pdf_bez(w,x,y,x1,y1,x2,y2,r) { 
+  var r1=1-r;
+  //return '<path d="M'+x+','+y+' C'+(r1*x1+r*x)+','+(r1*y1+r*y)+' '+(r1*x1+r*x2)+','+(r1*y1+r*y2)+' '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
+  return ' '+w+' w '+_pdfm(x,y)+' '+_pdfc(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2)+' s';
+}
+
+function _pdf_bez2(c,x,y,x1,y1,x2,y2,r) { 
+  if(c) return _pdfl(x1,y1)+' '+_pdfl(x2,y2);
+  else {
+   var r1=1-r;
+   return ' '+_pdfc(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2);
+  }
+}
+
+function _pdfpoly(w,c,xy) {
+  var s=' '+w+' w '+_pdf_color(c)+' rg',i;
+  for(i=0;i<xy.length;i+=2)
+    s+=' '+_pdfx(xy[i])+' '+_pdfy(xy[i+1])+(s==''?' m':' l');
+  return s=_pdf_color(c)+' rg'+s+' b';
+}
+
+function _pdf_path(w,c,xy,o,rr) {
+  var s,i,i1,lx,ly,nx,ny,f2=quad||hexa||tria?_pdf_arc2:_pdf_bez2;
+  o.push(o[0]);xy.push(xy[0],xy[1]);
+  nx=(xy[0]+xy[xy.length-4])/2,ny=(xy[1]+xy[xy.length-3])/2;
+  s='M'+nx+','+ny;
+  for(i1=i=0;i+2<xy.length;i1++,i+=2)
+    lx=nx,ly=ny,s+=f2(o[i1]||o[i1+1],lx,ly,xy[i],xy[i+1],nx=(xy[i]+xy[i+2])/2,ny=(xy[i+1]+xy[i+3])/2,rr);
+  s=''+_pdf_color(c)+' '+w+' w '+s+' b';
+  return s;
+}
+
+function _pdfcell(x,y,rr) {
+  var s='',c=_color(x,y);
+  if(0&&grdm) { 
+   if(c=='#fff') c=clr2[1];
+   var gn=c.replace('#','x'),g=svgg[gn];
+   if(!g) s+=svgg[gn]='<defs>'+(grdm==2?_svg_radial:_svg_linear)(gn,c,grdx,grdy)+'</defs>\r\n';
+   c='url(#'+gn+')';
+  }
+  if(quad&&!rou) {
+    var sx=brd+x*cell,sy=brd+y*cell;
+    s+=' 0.5 w '+_pdf_color(c)+' rg';
+    s+=' '+_pdfx(sx)+' '+_pdfy(sy+cell)+' '+_pdfx(cell)+' '+_pdfy(cell)+' re b\n';
+  } else {
+    var xy=_points(x,y);
+    if(rou) {
+      var i,i1,o=[],lx,ly,nx,ny,r=[],r=_border(x,y),s2='';
+      for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+r[i],y+r[i+1]);
+      s+=_pdf_path(0.5,c,xy,o,rr);
+    } else 
+      s+=_pdfpoly(0.5,c,xy);
+  }
+  return s;
+}
+
+function _pdfborder(x,y,rr) {
+  var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y),n=xy.length;
+  if(rou) {
+    var i1,a,o=[];
+    for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
+    o.push(o[0]);o.shift();
+    o.push(o[0]);
+    xy.push(xy[0],xy[1],xy[2],xy[3]);
+    for(i1=i=0;i+4<xy.length;i1++,i+=2) {
+      if(!o[i1]&&!o[i1+1]) {
+         if(quad||hexa||tria) {
+           var ar=tria?cell3y/3:hexa?cell6x/2:cell/2;
+           s+=_pdf_arc(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,ar);
+         } else s+=_pdf_bez(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,rr);
+      } else if(!o[i1]) s+=_pdfline(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
+      else if(!o[i1+1]) s+=_pdfline(2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
+    }
+  } else
+    for(i=0,i2=b.length-2;i<xy.length;i2=i,i+=2) {
+      if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_pdfline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
+    }
+  if(e) {
+    xy.splice(n,4);
+    var i,m,i2,i3,xy2=xy.slice();
+    _polyex2(xy,15/16,0,0);
+    for(m=1,i=0,i2=b.length-2;i<xy.length;i2=i,i+=2,m<<=1) 
+      if(e&m) 
+        s+=_pdfline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
+    e=e|rol(xy2.length>>1,e,-1);
+    for(m=1,i=0;i<xy2.length;i+=2,m<<=1) 
+      if(e&m)
+        s+=_pdfcircle(3,'#000',1,xy2[i],xy2[i+1]);
+  }
+  return s;
+}
+
+function _pdf() {
+  var w=cv1.width,h=cv1.height;
+  var s='1 j 1 w\n';
+  var c,x,y,ey=board.length-1;
+  var p=f.peg.checked,rr=tria?cell3y/3:hexa?cell6x/2:quad?cell/2:0.125,rr2=rr>0?rr*0.75:rr;
+  pdfh=h;
+  s+="0 0 0 RG\n";
+  for(y=0;y<ey;y++)
+    for(x=0,b=board[y],xe=b.length;x<xe;x++)
+      if((c=b[x])>' ') {
+        s+=_pdfcell(x,y,rr)+'\r\n';
+        if(c!='x') {
+          if(p) {
+            var xy=_polyex2(_points(x,y),0.75),cc=c=='w'?'#fff':'#000';
+            if(rou) {
+              var i,i1,o=[],r=_border(x,y);
+              for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+r[i],y+r[i+1]);
+              s+=_pdf_path(2,cc,xy,o,rr2);
+            } else 
+              s+=_pdfpoly(2,cc,xy);
+          } else {
+            var g=_peg(x,y);
+            s+=c=='w'?'1 1 1 rg ':'0 0 0 rg '+_pdfcircle(g[0],g[1],g[2]);
+          }
+      }
+    }
+  for(y=0;y<ey;y++)
+    for(x=0,b=board[y],xe=b.length;x<xe;x++)
+      if((c=b[x])>' ') s+=_pdfborder(x,y,rr)+'\r\n';
+  s='%PDF-1.0\r\n'
++'1 0 obj\r\n'
++'<<\r\n'
++'/Type /Catalog\r\n'
++'/Pages 2 0 R\r\n'
++'>>\r\n'
++'endobj\r\n'
++'\r\n'
++'\r\n'
++'2 0 obj\r\n'
++'<<\r\n'
++'/Type /Pages\r\n'
++'/Count 1\r\n'
++'/Kids[3 0 R]\r\n'
++'>>\r\n'
++'endobj\r\n'
++'\r\n'
++'3 0 obj\r\n'
++'<<\r\n'
++'/Type /Page\r\n'
++'/Parent 2 0 R\r\n'
++'/Resources << /ProcSet 5 0 R>>\r\n'
++'/MediaBox[0 0 '+w+' '+h+']\r\n'
++'/Contents 4 0 R\r\n'
++'>>\r\n'
++'endobj\r\n'
++'\r\n'
++'4 0 obj\r\n'
++'<< /Length '+w+' >>\r\n'
++'stream\r\n'+s+'\nendstream\r\n'
++'endobj\r\n'
++'\r\n'
++'5 0 obj\r\n'
++'[\r\n'
++'/PDF\r\n'
++']\r\n'
++'endobj\r\n'
++'\r\n'
++'xref\r\n'
++'0 6\r\n'
++'0000000000 65535 f\r\n'
++'0000000016 00000 n\r\n'
++'0000000086 00000 n\r\n'
++'0000000136 00000 n\r\n'
++'0000000200 00000 n\r\n'
++'0000000328 00000 n\r\n'
++'trailer\r\n'
++'<<\r\n'
++'/Size 8\r\n'
++'/Root 1 0 R\r\n'
++'>>\r\n'
++'startxref\r\n'
++'1110\r\n'
++'%%EOF'
+  return s;
+}
+
+function _pdf_save() {
+  var a=document.getElementById("asave");
+  var w=cv1.width,h=cv1.height;
+  if(!h) h=w;
+  var d,s=_pdf();
+  d=encodeURIComponent(s);
+  a.href='data:application/pdf;charset=utf-8,'+d;
+  a.download='out.pdf';
+  a.click();
+}
 
 function _mxy(e) {
   var ex=e.offsetX,ey=e.offsetY;
