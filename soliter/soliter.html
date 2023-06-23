@@ -2519,17 +2519,17 @@ function _pdfcircle(w,c,r,x,y) {
   return s+' b\r\n';
 }
 
-function _pdf_arc(w,x,y,x2,y2,r) { 
-  var r1=1-r;
-  //return '<path d="M'+x+','+y+' A'+r+','+r+' 0 0 1 '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
-  return ' '+_pdfm(x,y)+' '+_pdfl(x2,y2)+' b';
+function _pdf_arc(w,x,y,x1,y1,x2,y2,z) { 
+  // var a=Math.PI/4,s=Math.sin(a),c=Math.cos(a),x=Math.sqrt(3);[s,c,4/3*(1-c),1-s*s/c,1-4/3*(1-c)/(s*s/c)];
+  var r=tria?5/9:hexa?1-4/3*(2*Math.sqrt(3)-3):1-4/3*(Math.sqrt(2)-1),r1=1-r;
+  return ' '+w+' w '+_pdfm(x,y)+' '+_pdfc(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2)+' S';
 }
 
-function _pdf_arc2(c,x,y,x1,y1,x2,y2,r) { 
+function _pdf_arc2(c,x,y,x1,y1,x2,y2,z) { 
   if(c) return  ' '+_pdfl(x1,y1)+' '+_pdfl(x2,y2);
   else {
-   //return ' A'+r+','+r+' '+' 0 0 1 '+x2+','+y2;
-   return  ' '+_pdfl(x1,y1)+' '+_pdfl(x2,y2);
+   var r=tria?5/9:hexa?1-4/3*(2*Math.sqrt(3)-3):1-4/3*(Math.sqrt(2)-1),r1=1-r;
+   return ' '+_pdfc(r1*x1+r*x,r1*y1+r*y,r1*x1+r*x2,r1*y1+r*y2,x2,y2);
   }
 }
 
@@ -2623,7 +2623,7 @@ function _pdfborder(x,y,rr) {
       if(!o[i1]&&!o[i1+1]) {
          if(quad||hexa||tria) {
            var ar=tria?cell3y/3:hexa?cell6x/2:cell/2;
-           s+=_pdf_arc(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,ar);
+           s+=_pdf_arc(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,ar);
          } else s+=_pdf_bez(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3],(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,rr);
       } else if(!o[i1]) s+=_pdfline(2,(xy[i]+xy[i+2])/2,(xy[i+1]+xy[i+3])/2,xy[i+2],xy[i+3]);
       else if(!o[i1+1]) s+=_pdfline(2,(xy[i+2]+xy[i+4])/2,(xy[i+3]+xy[i+5])/2,xy[i+2],xy[i+3]);
@@ -2649,7 +2649,7 @@ function _pdfborder(x,y,rr) {
 
 function _pdf() {
   var w=cv1.width,h=cv1.height;
-  var s='1 j 1 w\n',xr=[];
+  var s='1 j 1 J 1 w\n',xr=[];
   var c,x,y,ey=board.length-1;
   var p=f.peg.checked,rr=tria?cell3y/3:hexa?cell6x/2:quad?cell/2:0.125,rr2=rr>0?rr*0.75:rr;
   pdfh=h,pdfo=[],pdfd={};
