@@ -144,7 +144,9 @@ moves:<span style="font-size:18px;font-weight:bold;" id=moves>0</span><input sty
 <rect x=10 y=10 width=8 height=8 stroke=black stroke-width=1 fill=#cff />
 </svg>
 
-<input name=grd1 type=checkbox onclick=grdchg(1,this,event) title="gradient mode" />
+<input name=grd1 type=checkbox onclick=grdchg(1,this,event) title="gradient mode
+ctrl - radial
+shift - center radial" />
 
 </td>
 </tr>
@@ -653,7 +655,7 @@ function monochg(e) {
   if(e) _drawboard(); 
 }
 function grdchg(i,t,e,x) {
-  if(!x) grdm=f.grd1.checked*(e&&e.ctrlKey?2:1);
+  if(!x) grdm=f.grd1.checked*(e?1+e.ctrlKey+2*e.shiftKey:1);
   if(tria||tria2||tria4) grdx=1,grdy=2;
   else grdx=grdy=1;
   if(e) _drawboard();
@@ -1069,12 +1071,19 @@ function _alloc(w,h) {
 
 function _radial(dx,dy,xy,r) {
   var i,j,k,m=1/0,n=-1/0,x,sx,sy;
-  for(i=0;i<xy.length;i+=2) {
-    x=dx*xy[i]+dy*xy[i+1];
-    if(x<m) {j=i,m=x;if(!i) k=i,n=x;}
-    else if(x>n) k=i,n=x;
+  if(grdm==3) {
+    for(i=sx=sy=0;i<xy.length;i+=2) sx+=xy[i],sy+=xy[i+1];
+    i>>=1,sx/=i,sy/=i;
+    i=trap?4:tria2||tria4?2:0;
+    x=_sqr(sx-xy[i],sy-xy[i+1]);
+  } else {
+    for(i=0;i<xy.length;i+=2) {
+      x=dx*xy[i]+dy*xy[i+1];
+      if(x<m) {j=i,m=x;if(!i) k=i,n=x;}
+      else if(x>n) k=i,n=x;
+    }
+    sx=xy[j],sy=xy[j+1],x=_sqr(sx-xy[k],sy-xy[k+1]);
   }
-  sx=xy[j],sy=xy[j+1],x=_sqr(sx-xy[k],sy-xy[k+1]);
   x=Math.sqrt(x);
   return r?[sx,sy,x]:ctx.createRadialGradient(sx,sy,0,sx,sy,x);
 }
@@ -1098,7 +1107,7 @@ function _drawcell(x,y) {
     //if(grdm=2) g=ctx.createRadialGradient(sx,sy,0,sx+cell/2,sy+cell/2,cell);
     //else g=ctx.createLinearGradient(sx,sy,sx+cell,sy+cell);
     var xy=[sx,sy,sx+cell,sy,sx+cell,sy+cell,sx,sy+cell];
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy,0,x,y);
     else g=_linear(grdx,grdy,xy);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c=='#fff'?clr2[1]:c);
@@ -1319,8 +1328,7 @@ function _drawcell16(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[(x+2-(y&1)-(y/2)&1)&1]:mono==21?clr2[(x+(y&1)+y/2)&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[6],xy[7]);
     g.addColorStop(0,'#fff');
@@ -1375,8 +1383,7 @@ function _drawcell3(x,y) {
 function _drawcell3x(x,y,xy,c,border) {
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1423,8 +1430,7 @@ function _drawcell2x(x,y) {
   var c=ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1448,8 +1454,7 @@ function _drawcell5(x,y) {
   var c=mono==2?clr2[(x2^y2^tx)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[1^y&1]:mono==4?clr4['0312'[r]]:mono==30?clr2[+!tx]:mono==31?clr3[(3+dx%3+((dy>>1)&1))%3]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1488,8 +1493,7 @@ function _drawcell15(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*v+x1]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
@@ -1530,8 +1534,7 @@ function _drawcell8(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[d]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1571,8 +1574,7 @@ function _drawcell11(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
@@ -1673,8 +1675,7 @@ function _drawcell9(x,y) {
   var c=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[2*(y&1)+(x&1)]:mono==30?clr2[y&1]:mono==31?clr3[d]:'#fff';
   if(grdm) {
     var g;
-    //if(grdm==2) g=ctx.createRadialGradient(xy[0],xy[1],0,xy[0],xy[1],cell6x);
-    if(grdm==2) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radial(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -2318,6 +2319,7 @@ function _drawboard() {
   drawms=(drawt=+new Date())-ms;
 }
 
+function _svgx(x) { return Math.round(x*1000)/1000; }
 function _svgline(w,x,y,x2,y2) {
   return '<line x1="'+x+'" y1="'+y+'" x2="'+x2+'" y2="'+y2+'" style="stroke:#000;stroke-width:'+w+';" />\r\n';
 }
@@ -2378,26 +2380,49 @@ function _svg_linear(n,c,dx,dy) {
   return s;
 }
 
-function _svg_radial(n,c,dx,dy) {
-  var s,a=Math.atan2(dy,dx),x=Math.cos(a),y=Math.sin(a),e,f;
-  e=Math.abs(x),f=Math.abs(y);
-  if(e<f) e=f;
-  //x/=e,y/=e;
-  x=Math.round(50*(1-x)),y=Math.round(50*(1-y));
-  s='<radialGradient id="'+n+'" cx="'+x+'%" cy="'+y+'%" r="100%" >\r\n';
+function _svg_radialp(n,c,x,y,r,np) {
+  var p=np?'':'%',s='<radialGradient id="'+n+'" cx="'+_svgx(x)+p+'" cy="'+_svgx(y)+p+'" r="'+_svgx(r)+p+'"'+(np?' gradientUnits="userSpaceOnUse"':'')+' >\r\n';
   s+='<stop offset="0%" stop-color="#fff" />\r\n'
   s+='<stop offset="100%" stop-color="'+c+'" />\r\n';
   s+='</radialGradient>\r\n';
   return s;
 }
+function _svg_radial(n,c,dx,dy) {
+  var s,a=Math.atan2(dy,dx),x=Math.cos(a),y=Math.sin(a),e,f,r;
+  e=Math.abs(x),f=Math.abs(y);
+  if(e<f) e=f;
+  //x/=e,y/=e;
+  if(grdm==3) x=y=r=50;
+  else x=Math.round(50*(1-x)),y=Math.round(50*(1-y)),r=100;
+  s+=_svg_radialp(n,c,x,y,r);
+  return s;
+}
+function _svg_radialxy(n,c,x,y) {
+  var i,r,xy=_points(x,y),p=_peg(x,y),sx=p[0],sy=p[1],ix,iy,ax=ix=xy[0],iy,ay=iy=xy[1],f=0,m=_sqr(ax-sx,ay-sy),dx,dy;
+  for(i=2;i<xy.length;i+=2) {
+    if((r=xy[i])<ix) ix=r;else if(r>ax) ax=r; 
+    if((r=xy[i+1])<iy) iy=r;else if(r>ay) ay=r; 
+    if((r=_sqr(ax-sx,ay-sy))) f=i,m=r;
+  }
+  dx=ax-ix,dy=ay-iy,cx=(sx-ix)*100/dx,cy=(sy-iy)*100/dy,r=Math.sqrt(r);//*100/(ax-ix);
+  return _svg_radialp(n,c,sx,sy,r,1);
+}
 
+function _t11(x,y) { var d=(x+1)%2,cx=(x+1)>>1,dd=(cx+2*(y&1))%3+3*d; return dd; }
 var svgg={};
 function _svgcell(x,y,rr) {
   var s='',c=_color(x,y);
   if(grdm) { 
    if(c=='#fff') c=clr2[1];
-   var gn=c.replace('#','x'),g=svgg[gn];
-   if(!g) s+=svgg[gn]='<defs>'+(grdm==2?_svg_radial:_svg_linear)(gn,c,grdx,grdy)+'</defs>\r\n';
+   var gn=c.replace('#','x'),t,g;
+   if(grdm==3) {
+     //t=tria2||tria4?(x&1)+2*(y&1):_t11(x,y);
+     t=''+x+'_'+y,gn+='_'+t,g=svgg[gn];
+     if(!g) s+=svgg[gn]='<defs>'+_svg_radialxy(gn,c,x,y)+'</defs>\r\n';
+   } else {
+     g=svgg[gn];
+     if(!g) s+=svgg[gn]='<defs>'+(grdm>1?_svg_radial:_svg_linear)(gn,c,grdx,grdy)+'</defs>\r\n';
+   }
    c='url(#'+gn+')';
   }
   if(quad&&!rou) {
@@ -2593,7 +2618,7 @@ function _pdfcell(x,y,rr,b) {
   var s='',c=_color(x,y),xy=_points(x,y),sh;
   if(grdm) { 
    if(b) { if(c=='#fff') c=clr2[1];
-     sh=(grdm==2?_pdf_radial:_pdf_linear)(c,grdx,grdy,xy);
+     sh=(grdm>1?_pdf_radial:_pdf_linear)(c,grdx,grdy,xy);
    } else sh=-1;
   }
   if(quad&&!rou) {
