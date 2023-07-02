@@ -233,6 +233,14 @@ fill</x>
 <circle cx=15 cy=15 r=3 stroke=black stroke-width=1 fill=#00 />
 </svg>
 edge</x>
+<input name=des type=radio value=8 />
+<x onclick=_setdes(8)>
+<svg width=22 height=20 style=vertical-align:bottom >
+<polygon points="4.5,4 10.5,10 4.5,16 " style="fill:#ddd;stroke:black;stroke-width:1;stroke-linejoin:round" />
+<polygon points="10.5,4 16.5,10 10.5,16 " style="fill:#ddd;stroke:black;stroke-width:1;stroke-linejoin:round" />
+<circle cx=3.5 cy=10 r=3 stroke=black stroke-width=1 fill=#ff0 />
+<circle cx=16.5 cy=10 r=3 stroke=black stroke-width=1 fill=#000 />
+&gt;&gt;&gt;</x>
 <br>
 <input name=white type=checkbox title="edit with white" />&#9898; white
 <table title="black&amp;white jump rules" style=text-align:center ><tr><td colspan=4>
@@ -2893,6 +2901,49 @@ function _dline3(px,py,mx,my,c) {
   }
 }
 
+function _next(x,y,d) {
+  if(hexa) {
+    var dx=y&1?0:-1;
+    x+=d==0?-1:d==1?dx:d==2?dx+1:d==3?1:d==4?dx+1:d==5?dx:0;
+    y+=d==1||d==2?-1:d==4||d==5?1:0;
+  } else {
+    x+=d==0?-1:d==2?1:0;
+    y+=d==1?-1:d==3?1:0;
+  }
+  return [x,y];
+}
+
+function _dshift(px,py,mu,c) {
+ var mx=mu[0],my=mu[1],ex=mu[5],ey=mu[6];
+  var a,b,d,e,n,m=[],i,j,xy=[],f,x,y,nx,ny,p,pv,pi,mi,mv;
+  if(hexa) {
+    b=_idx(ex,ey,_points(px,py));
+    f=(b+3)%6;
+  } else {
+    b=Math.abs(px-mx)>Math.abs(py-my)?0:1,f=b+2;
+  }
+  p=_peg(px,py),mi=-2,mv=_sqr(ex-p[0],ey-p[1]);
+  for(x=px,y=py;(n=_next(x,y,b),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny) {
+    p=_peg(nx,ny),pv=_sqr(ex-p[0],ey-p[1]);
+    if(pv<mv) mi=xy.length,mv=pv;
+    xy.push(ny,nx);
+  }
+  pi=xy.length,mi=pi-2-mi,xy.reverse(),xy.push(px,py);
+  for(x=px,y=py;(n=_next(x,y,f),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny) {
+    p=_peg(nx,ny),pv=_sqr(ex-p[0],ey-p[1]);
+    if(pv<mv) mi=xy.length,mv=pv;
+    xy.push(nx,ny);
+  }
+  if(c<0) {
+    sele=[];
+    for(j=0;j<xy.length;j+=2) if(xy.length==2||xy[j]!=px||xy[j+1]!=py) sele.push(xy[j],xy[j+1]);
+  } if(c>=0) {
+    n=xy.length/2,d=(((pi-mi)/2)%n+n)%n;
+    for(i=0;i<xy.length;i+=2) m.push(board[xy[i+1]][xy[i]]);
+    for(i=j=0;i<xy.length;j++,i+=2) board[xy[i+1]][xy[i]]=m[(j+d)%n];
+  }
+}
+
 function _drect(px,py,mx,my,c) {
   var x,y,b,r;
   if(px>mx) r=px,px=mx,mx=r;
@@ -3037,6 +3088,8 @@ function _mdesign(dm,up,mu,ev) {
      var a=mp[8]&(1<<mp[7]),i=mu[7],m=1<<i,r=_dub1(lx,ly,i),m2=1<<r[2];
      if(a) _rstblock(lx,ly,m),_rstblock(r[0],r[1],m2);else _setblock(lx,ly,m),_setblock(r[0],r[1],m2);
    }
+ } else if(dm==8) {
+   _dshift(px,py,mu,up?1:-1);
  } else if(dm==1||px==lx&&py==ly) {
     var c=board[py][px],y;
     e=_extent(lx,ly);
