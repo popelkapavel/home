@@ -1,5 +1,8 @@
 <html>
 <style type=text/css >
+.h { display:none;}
+.sel1 { background-color:#ccf;border:2px solid #448;}
+.sel0 { background-color:transparent;border:2px solid transparent;}
 </style>
 <form name=f>
 <table>
@@ -26,9 +29,9 @@
 <input type=button onclick=transf(6,event) value="O" />
 <input style=float:right; type=button onclick=game2txt(1) value="&lt;text&lt;game&lt;" />
 </td><td>
-<input name=onoff type=radio value=0 checked onclick=onoffchg(1,0,this,event) style="margin:0px;" title="soliter mode" />
-<input name=onoff type=radio value=2 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="shifter mode" />
-<input name=onoff type=radio value=1 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="on&amp;off mode" />
+<input name=onoff type=radio value=0 checked onclick=onoffchg(1,0,this,event) style="margin:0px;" title="soliter" />
+<input name=onoff type=radio value=2 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="shifter" />
+<input name=onoff type=radio value=1 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="on&amp;off" />
 <select style=margin-bottom:2px; name=onoff2 onchange=onoffchg(1,1) title="on&amp;off type">
 <option value=1 >on&amp;off</option>
 <option value=2 >on&amp;off o</option>
@@ -49,64 +52,64 @@
 </select>
 <input name=onoffx type=checkbox onclick=onoffchg(0,0,this,event) title="onoff extent" />&#x2191
 |
-<input name=hexa type=radio checked value=4 title=squares />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(0) >
+<input class=h name=hexa type=radio checked value=4 title=squares />
+<svg id=hexa0 width=20 height=20 style=vertical-align:middle onclick=_sethex(0) >
 <rect x=2 y=2 width=8 height=8 stroke=black stroke-width=1 fill=none />
 <rect x=10 y=2 width=8 height=8 stroke=black stroke-width=1 fill=none />
 <rect x=2 y=10 width=8 height=8 stroke=black stroke-width=1 fill=none />
 <rect x=10 y=10 width=8 height=8 stroke=black stroke-width=1 fill=none />
 </svg>
-<input name=hexa type=radio value=6 title=hexagons />
-<svg width=24 height=20 style=vertical-align:middle onclick=_sethex(1) >
+<input class=h name=hexa type=radio value=6 title=hexagons />
+<svg id=hexa1 width=24 height=20 style=vertical-align:middle onclick=_sethex(1) >
 <polygon points="10,2 14,5 14,9 10,12 6,9 6,5 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="6,9 10,12 10,16 6,19 2,16 2,12 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="18,2 22,5 22,9 18,12 14,9 14,5 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="14,9 18,12 18,16 14,19 10,16 10,12 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 </svg>
-<input name=hexa type=radio value=3 title=triangles />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(2) >
+<input class=h name=hexa type=radio value=3 title=triangles />
+<svg id=hexa2 width=20 height=20 style=vertical-align:middle onclick=_sethex(2) >
 <polygon points="10,1,5.5,10,14.5,10 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="10,19,5.5,10,14.5,10 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="5.5,10,1,19,10,19 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="14.5,10,19,19,10,19 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 </svg>
-<input name=hexa type=radio value=34 title="2 triangles in squares" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(3) >
+<input class=h name=hexa type=radio value=34 title="2 triangles in squares" />
+<svg id=hexa3 width=20 height=20 style=vertical-align:middle onclick=_sethex(3) >
 <polygon points="1,1 19,1 19,19 1,19" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polygon points="10,1 1,10 10,19 19,10" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="10,1 10,19" style="stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="1,10 19,10" style="stroke:black;stroke-width:1;stroke-linejoin:round" />
 </svg>
-<input name=hexa type=radio value=34 title="4 triangles in squares" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(4) >
+<input class=h name=hexa type=radio value=34 title="4 triangles in squares" />
+<svg id=hexa4 width=20 height=20 style=vertical-align:middle onclick=_sethex(4) >
 <rect x=1 y=1 width=18 height=18 style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <line x1=1 y1=1 x2=19 y2=19 style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <line x1=1 y1=19 x2=19 y2=1 style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 </svg>
 
-<input name=hexa type=radio value=5 title="pentagons" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(5) >
+<input class=h name=hexa type=radio value=5 title="pentagons" />
+<svg id=hexa5 width=20 height=20 style=vertical-align:middle onclick=_sethex(5) >
 <polygon points="1,14 1,6 10,2 19,6 19,14 10,18" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="4,4 8,10 12,10 16,16" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 <polyline points="16,4 12,10 8,10 4,16" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 </svg>
 
-<input name=hexa type=radio value=6 title="cubes" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(6) >
+<input class=h name=hexa type=radio value=6 title="cubes" />
+<svg id=hexa6 width=20 height=20 style=vertical-align:middle onclick=_sethex(6) >
 <polygon points="1,5 10,1 19,5 19,15 10,19 1,15" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="1,5 10,10 19,5" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 <polyline points="10,10 10,19" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 </svg>
 
-<input name=hexa type=radio value=7 title="delta" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(7) >
+<input class=h name=hexa type=radio value=7 title="delta" />
+<svg id=hexa7 width=20 height=20 style=vertical-align:middle onclick=_sethex(7) >
 <polygon points="1,19 10,1 19,19 " style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="5,10 10,13 15,10" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 <polyline points="10,13 10,19" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 </svg>
 
-<input name=hexa type=radio value=8 title="trapez" />
-<svg width=20 height=20 style=vertical-align:middle onclick=_sethex(8) >
+<input class=h name=hexa type=radio value=8 title="trapez" />
+<svg id=hexa8 width=20 height=20 style=vertical-align:middle onclick=_sethex(8) >
 <polygon points="1,5 10,1 19,5 19,15 10,19 1,15" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:round" />
 <polyline points="10,1 10,19" style="stroke:black;fill:none;stroke-width:1;stroke-linejoin:round" />
 </svg>
@@ -235,6 +238,7 @@ fill</x>
 <circle cx=15 cy=15 r=3 stroke=black stroke-width=1 fill=#00 />
 </svg>
 edge</x>
+<!--
 <input name=des type=radio value=8 />
 <x onclick=_setdes(8)>
 <svg width=22 height=20 style=vertical-align:bottom >
@@ -243,6 +247,7 @@ edge</x>
 <circle cx=3.5 cy=10 r=3 stroke=black stroke-width=1 fill=#ff0 />
 <circle cx=16.5 cy=10 r=3 stroke=black stroke-width=1 fill=#000 />
 &gt;&gt;&gt;</x>
+-->
 <br>
 <input name=white type=checkbox title="edit with white" />&#9898; white
 <table title="black&amp;white jump rules" style=text-align:center ><tr><td colspan=4>
@@ -697,9 +702,13 @@ function whitechg(src,value) {
    f.w3.value=_wx('w',white[3]);
  }
 }
+function el(id) { return document.getElementById(id);}
+function cl(e,cls,on,cls2) { var cl=e.classList;if(on) cl.add(cls),cls2&&cl.remove(cls2);else cl.remove(cls),cls2&&cl.add(cls2);} 
 function hexachg(e) {
-  hexa=hxa[1].checked;tria=hxa[2].checked,tria2=hxa[3].checked,tria4=hxa[4].checked,penta=hxa[5].checked,cubes=hxa[6].checked,delta=hxa[7].checked,trap=hxa[8].checked;
-  quad=!(hexa|tria|tria2|tria4|penta|cubes|delta|trap);
+  var i,m;
+  for(m=0;m<9&&!hxa[m].checked;m++);
+  for(i=0;i<9;i++) cl(el('hexa'+i),'sel1',i==m,'sel0');
+  quad=m==0,hexa=m==1;tria=m==2,tria2=m==3,tria4=m==4,penta=m==5,cubes=m==6,delta=m==7,trap=m==8;
   grdchg(0,0,0,1);
   if(e&&!depth) _resizea(),_drawboard();
 }
@@ -715,7 +724,7 @@ function _setclr(i) { mxa[i].checked=true; monochg(1); }
 function _cmd(a) {
   if(a) a.forEach(function(x) {
     if(/quad|hexa|tria|penta|cubes|delta|trap/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:x=='penta'?5:x=='cubes'?6:x=='delta'?7:x=='trap'?8:0].checked=1,hexachg();
-    else if(/sol|onoff/.test(x)) (f.onoff.checked=(onoff=x=='onoffo'?2:x=='onoffx'?4:x=='onoff3'?3:x=='onoff'?1:0)>0)?f.onoff2.value=onoff:0;
+    else if(/sol|shift|onoff/.test(x)) (onoff=x=='onoffo'?2:x=='onoffx'?4:x=='onoff3'?3:x=='onoff'?1:0)?(f.onoff2.value=onoff):0,f.onoff.value=onoff?1:x=='shift'?2:0;
     else if(/white_/.test(x)) whitechg(0,x.substr(6));
     else if(/(no)?diag/.test(x)) f.diag.checked=(diag=x=='diag');
     else if(/col\d+/.test(x))
@@ -994,7 +1003,7 @@ function _board2block(fx) {
 function parse(txt) {
   var cmd=txt.match(/^\s*\/\/.*/);
   if(cmd) {
-    cmd=cmd[0].match(/\b(sol|onoff[3x]?|white_[xobwfe]+|quad|hexa|tria[24]?|penta|cubes|delta|trap|col[1234]|col23|(no)?diag)\b/g);
+    cmd=cmd[0].match(/\b(shift|sol|onoff[3xo]?|white_[xobwfe]+|quad|hexa|tria[24]?|penta|cubes|delta|trap|col[1234]|col23|(no)?diag)\b/g);
     _cmd(cmd);
   }
   txt=txt.replace(/\/\/.*(\n|$)/g,'');
@@ -1036,7 +1045,7 @@ function _white() {
 function _game2txt() {
   var s=[],c,e,l,r,x,y,xi=-1,yi,ya=0,n,wh=f.white2.value!='xxff'||_white();
   n=f.ta.value.match(/@[^,\r\n]+/);
-  n='//'+(n?n[0]+',':'')+(trap?'trap':delta?'delta':cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
+  n='//'+(n?n[0]+',':'')+(trap?'trap':delta?'delta':cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(shifter?',shift':onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
   for(y=0;y<board.length;y++) {
     l='',r=board[y];
     for(x=0;x<r.length;x++) {
@@ -1298,6 +1307,12 @@ function _points11(x,y) {
   else if(dd==4) return [sx+2*x2,sy+y2 ,sx+2*x2,sy+3*y2 ,sx+x2,sy+4*y2,sx+x2,sy ];
   else if(dd==5) return [sx+2*x2,sy+3*y2 ,sx+x2,sy+4*y2 ,sx,sy+3*y2,sx+2*x2,sy+y2];
   return [sx+x2,sy+4*y2 ,sx,sy+3*y2,sx,sy+y2,sx+2*x2,sy+3*y2];
+}
+
+function _points11h(x,y) {
+  var d=(x+1)%2,cx=(x+1)>>1,dd=(cx+2*(y&1))%3+3*d;
+  var sx=brd+(cx+(y&1)/2)*cell8x,sy=brd+((1+y*3)/4)*cell8y,x2=cell8x/2,y2=cell8y/4;
+  return [sx,sy+3*y2 ,sx,sy+y2 ,sx+x2,sy,sx+2*x2,sy+y2,sx+2*x2,sy+3*y2,sx+x2,sy+4*y2];
 }
 
 function _sqr(x,y) { return x*x+y*y;}
@@ -2913,10 +2928,22 @@ function _border2(x,y) {
   return [0,-1,1,0,-1,0];
 }
 
-function _next(x,y,d) {
+function _shiftxy(px,py,b,opt) {
+  var xy=[],x,y,p,nx,ny,n,pi,f;
+  f=penta&&opt?b^4:tria4||penta?(((b+4)^1)&7):quad||tria2?(b=b&3,b^2):(b%=6,(b+3)%6);
+  for(x=px,y=py;(n=_next(x,y,b,opt),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny)
+    xy.push(ny,nx);
+  xy.reverse(),pi=xy.length,xy.push(px,py);
+  for(x=px,y=py;(n=_next(x,y,f,opt),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny)
+    xy.push(nx,ny);
+  xy.push(pi);
+  return xy;
+}
+
+function _next(x,y,d,opt) {
   if(cubes) {
     var e=(x+2)%3,bx=y&1?0:-3,x2;
-    if(diag) {
+    if(opt) {
       if(d==0) x+=e==0?1:e==1?-2:-2;
       else if(d==1) x+=e==0?bx+2:e==1?-1:-1,y+=e==0?-1:0;
       else if(d==2) x+=e==0?bx+4:e==1?1:-2,y+=e==0?-1:0;
@@ -2932,6 +2959,22 @@ function _next(x,y,d) {
       else if(d==5) x+=e==0?1:e==1?bx-1:bx,y+=e==0?0:e==1?1:1;
     }
   } else if(trap) {
+    var e=(x+1)%2,cx=(x+1)>>1,dd=(cx+2*(y&1))%3+3*e,dx=y&1?0:-2;
+    if(opt) {
+      if(d==0) x+=dd==5?dx:dd==1?dx:-1,y+=dd==5||dd==1?1:0;
+      else if(d==1) x+=dd==2?dx:dd==3?dx:-1,y+=dd==2||dd==3?-1:0;
+      else if(d==2) x+=dd==0?1:dd==1?dx+1:dd==2?dx+2:dd==3?dx:dd==4?dx+1:-1,y+=dd==0||dd==5?0:-1;
+      else if(d==3) x+=dd==2?dx+2:dd==3?dx+2:1,y+=dd==2||dd==3?-1:0;
+      else if(d==4) x+=dd==0?dx+2:dd==4?dx+2:1,y+=dd==0||dd==4?1:0;
+      else if(d==5) x+=dd==0?dx+1:dd==1?dx:dd==2?1:dd==3?-1:dd==4?dx+2:dx+1,y+=dd==2||dd==3?0:1;
+    } else {
+      if(d==0) x+=-1;
+      else if(d==1) x+=dd==0?1:dd==1?dx+1:dd==2?dx:dd==3?dx:-1,y+=dd==1||dd==2||dd==3?-1:0;
+      else if(d==2) x+=dd==2?dx+2:dd==3?dx+2:dd==4?dx+1:dd==5?-1:1,y+=dd==2||dd==3||dd==4?-1:0;
+      else if(d==3) x+=1;
+      else if(d==4) x+=dd==0?dx+2:dd==3?-1:dd==4?dx+2:dd==5?dx+1:1,y+=dd==4||dd==5||dd==0?1:0;
+      else if(d==5) x+=dd==0?dx+1:dd==1?dx:dd==2?1:dd==5?dx:-1,y+=dd==5||dd==0||dd==1?1:0;
+    }
   } else if(delta) {
     var r=(x+2)%3,cx=(x+2-r)/3,e=1^(y&1)^(cx&1),dy=e?-1:1,xx=3*e+r;
     if(d==0) x+=2;
@@ -2941,7 +2984,24 @@ function _next(x,y,d) {
     else if(d==4) x+=xx==3||xx==5?0:xx==0?1:xx==1?2:xx==2?2:1,y+=xx==3||xx==5?1:0;
     else if(d==5) x+=xx==3||xx==5?0:xx==0?-2:xx==1?-2:xx==2?-1:-1,y+=xx==3||xx==5?1:0;
   } else if(penta) {
+    var d2=d>>1,cx=(x+1)>>1,x1=x&1,vx=(((cx+y)&1)<<1)|((x^1)&1);
+    if(opt) {
+      if(d2==0) x+=vx==2&&d==1?-2:vx==1&&d==1?-2:vx==0&&d==1?1:-1;
+      else if(d2==1) x+=vx==0&&d==3?1:vx==3&&d==3?-1:vx==2?1:vx==1?-1:0,y+=vx==1||vx==2&&d==2||vx==3&&d==3?0:-1;
+      else if(d2==2) x+=vx==3&&d==5?2:vx==0&&d==5?2:vx==1&&d==5?-1:1;
+      else if(d2==3) x+=vx==1&&d==7?-1:vx==2&&d==7?1:vx==3?-1:vx==0?1:0,y+=vx==0||vx==2&&d==7||vx==3&&d===6?0:1;
+    } else {
+      if(d2==0) x+=vx==2&&d==1?-2:vx==1?-2:-1;
+      else if(d2==1) x+=vx==0&&d==3?1:vx==2?1:vx==1?-1:0,y+=vx==1?0:-1;
+      else if(d2==2) x+=vx==3&&d==5?2:vx==0?2:1;
+      else if(d2==3) x+=vx==1&&d==7?-1:vx==3?-1:vx==0?1:0,y+=vx==0?0:1;
+    }
   } else if(tria4) {
+    var d2=d>>1,r=(((y+1)&1)<<1)|((x+1)&1);
+    if(d2==0) x+=r==3&&d==1?0:r==2?0:-1,y+=r==3&&d==1?-1:r==0?1:r==2?-1:0;
+    else if(d2==1) x+=r==2&&d==3?1:r==1?-1:r==0?1:0,y+=r==2&&d==3?0:r==0?0:-1;
+    else if(d2==2) x+=r==0&&d==5?0:r==1?0:1,y+=r==0&&d==5?1:r==1?1:r==3?-1:0;
+    else if(d2==3) x+=r==1&&d==7?-1:r==2?1:r==3?-1:0,y+=r==1&&d==7?0:r==3?0:1;
   } else if(tria2) {
     var xx=(x+1+2*(y&1))&3;
     if(d==0||d==2) x+=d?1:-1;
@@ -2962,18 +3022,6 @@ function _next(x,y,d) {
   return [x,y];
 }
 
-function _shiftxy(px,py,b) {
-  var xy=[],x,y,p,nx,ny,n,pi,f;
-  f=quad||tria2?(b=b&3,b^2):(b%=6,(b+3)%6);
-  for(x=px,y=py;(n=_next(x,y,b),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny)
-    xy.push(ny,nx);
-  xy.reverse(),pi=xy.length,xy.push(px,py);
-  for(x=px,y=py;(n=_next(x,y,f),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny)
-    xy.push(nx,ny);
-  xy.push(pi);
-  return xy;
-}
-
 function _shiftb(px,py,ex,ey) {
   var b;
   if(cubes) {
@@ -2983,6 +3031,11 @@ function _shiftb(px,py,ex,ey) {
     else if(e==1) b=b==0?3:b==1?5:b==2?0:2;
     else if(e==2) b=b==0?1:b==1?3:b==2?4:0;
   } else if(trap) {
+    var e=(px+1)%2,cx=(px+1)>>1,dd=(cx+2*(py&1))%3+3*e,opt=diag;
+    b=_idx(ex,ey,_points11h(px,py),opt);
+    b+=opt?0:5;
+    b=b%6;
+    console.log(111,dd,b);
   } else if(delta) {
     var f,r=(px+2)%3,cx=(px+2-r)/3,e=1^(py&1)^(cx&1),dy=e?-1:1,xx=3*e+r;
     b=_idx(ex,ey,_points(px,py),2);
@@ -2995,7 +3048,23 @@ function _shiftb(px,py,ex,ey) {
     else if(xx==5) b=f>1?f+4:b+5;
     b%=6;
   } else if(penta) {
+    var b2,cx=(px+1)>>1,vx=(((cx+py)&1)<<1)|((px^1)&1);
+    b=_idx(ex,ey,_points(px,py),2);
+    b=((f=b&7)<<1)|(b&64?0:1);
+    if(vx==0) b=b<2?b:b<6?f+1:b+6;
+    else if(vx==1) b=b<2?b+4:b<6?f+5:b+2;
+    else if(vx==2) b=b<2?b+6:b<6?f+7:b+4;
+    else if(vx==3) b=b<2?b+2:b<6?f+3:b+0;
+    b&=7;
   } else if(tria4) {
+    var r=(((py+1)&1)<<1)|((px+1)&1);
+    b=_idx(ex,ey,_points(px,py),2);
+    b=((f=b&3)<<1)|(b&64?0:1);
+    if(r==0) b+=b>3?4:b==3?4:b>0?3:2;
+    else if(r==1) b+=b>3?6:b==3?6:b>0?5:4;
+    else if(r==2) b+=b>3?2:b==3?2:b>0?1:0;
+    else if(r==3) b+=b>3?0:b==3?0:b>0?7:6;
+    b&=7;
   } else if(tria) {
   } else if(tria2) {
     var f,xx=(px+1+2*(py&1))&3,r;
@@ -3029,10 +3098,10 @@ function _shift(xy,d) {
 }
 
 function _dshift(px,py,mu,c) {
- var mx=mu[0],my=mu[1],ex=mu[5],ey=mu[6];
+ var mx=mu[0],my=mu[1],ex=mu[5],ey=mu[6],opt=diag;
   var a,b,d,e,n,m=[],i,j,xy=[],x,y,nx,ny,p,pv,pi,mi,mv;
   b=_shiftbf(px,py,ex,ey);
-  xy=_shiftxy(px,py,b);
+  xy=_shiftxy(px,py,b,opt);
   pi=xy.pop();
   for(i=0,mv=1<<30;i<xy.length;i+=2) {
     p=_peg(x=xy[i],y=xy[i+1]),pv=_sqr(ex-p[0],ey-p[1]);
@@ -3063,9 +3132,9 @@ function _dshift(px,py,mu,c) {
 }
 
 function _shifter(up,mu,ev) {
-  var px=mp[0],py=mp[1],ex=mu[5],ey=mu[6],b,m,i,j,pi;
+  var px=mp[0],py=mp[1],ex=mu[5],ey=mu[6],b,m,i,j,pi,opt=diag;
   b=_shiftb(px,py,ex,ey);
-  xy=_shiftxy(px,py,b),pi=xy.pop();
+  xy=_shiftxy(px,py,b,opt),pi=xy.pop();
   if(up) {
     for(i=0,mv=1<<30;i<xy.length;i+=2) {
       p=_peg(x=xy[i],y=xy[i+1]),pv=_sqr(ex-p[0],ey-p[1]);
@@ -3081,7 +3150,7 @@ function _shifter(up,mu,ev) {
     for(j=0;j<xy.length;j+=2) if(xy.length==2||xy[j]!=px||xy[j+1]!=py) sele.push(xy[j],xy[j+1]);
     _drawboard();
   }
-  return [px,py,b,i];
+  return [px,py,[b,opt],i];
 }
 
 function _drect(px,py,mx,my,c) {
@@ -3258,9 +3327,10 @@ function _mdesign(dm,up,mu,ev) {
 }
 function _mmove(e,d) {
   if(!e.buttons||!mp) return;
-  var xy=_mxy(e),mm2=mm,b=board[xy[1]],bp=board[mp[1]],bc=bp&&bp[mp[0]],dm,r;
-  if(design==7) xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),0,128);
-  if(design==8) xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),tria?2:0);
+  var xy=_mxy(e),mm2=mm,b=board[xy[1]],bp=board[mp[1]],bc=bp&&bp[mp[0]],dm,r,x7;
+  if(design==7) x7=1,xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),0,128);
+  if(design==8) x7=1,xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),tria?2:0);
+  if(shifter) x7=1,xy[7]=_idx(xy[5],xy[6],trap?_points11h(xy[0],xy[1]):_points(xy[0],xy[1]),trap?diag:2)
   dm=_design(e);
   if(dm==5||dm==6) {
     if(!d) {
@@ -3270,7 +3340,7 @@ function _mmove(e,d) {
       mm1[1]={buttons:e.buttons,offsetX:e.offsetX,offsetY:e.offsetY,shiftKey:e.shiftKey,ctrlKey:e.ctrlKey};
       return;
     }
-  } else if((design==7&&xy[7]==-1)||(xy[0]==mm[0]&&xy[1]==mm[1]&&((design!=7&&design!=8)||xy[7]==mm[7]))) return;
+  } else if((design==7&&xy[7]==-1)||(xy[0]==mm[0]&&xy[1]==mm[1]&&(!x7||xy[7]==mm[7]))) return;
   mm=xy,mm1=0;
   if(dm) _mdesign(dm,0,xy,e);
   else if(shifter) _shifter(0,xy,e); 
@@ -4358,7 +4428,7 @@ function _undo(n) {
     while(redo&&n--) {
       var u=undo[--redo],px=u[0],py=u[1],dx=u[2],dy=u[3],m=-1;
       if(u.length==4) {
-        var xy=_shiftxy(px,py,dx);
+        var xy=_shiftxy(px,py,dx[0],dx[1]);
         _shift(xy,-dy);
       } else if(u.length==5) {
         _switchx(u[2])(px,py,u[3],u[4],1);
@@ -4389,7 +4459,7 @@ function _redo(n) {
   while(redo<undo.length&&n--) {
     var u=undo[redo++],px=u[0],py=u[1],dx=u[2],dy=u[3],m=1;
     if(u.length==4) {
-      var xy=_shiftxy(px,py,dx);
+      var xy=_shiftxy(px,py,dx[0],dx[1]);
       _shift(xy,dy);
     } else if(u.length==5) 
       _switchx(u[2])(px,py,u[3],u[4]);

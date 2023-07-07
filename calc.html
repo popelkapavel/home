@@ -10,6 +10,7 @@ t: <input type=checkbox name=play />
 , <input type=checkbox name=comma />
   <input size=20 name=speed value='1.0' />
 2D <input type=button onclick=recalc2d() value="draw 2D" />
+ <input type=button onclick=recalc2d(3+event.ctrlKey+2*event.shiftKey) value="&#x2b21;" title="cubes 2D" />
 <input type=checkbox name=rgb tooltip="RGB mode" />
  n: <input size=2 name=nd2 value='48' /> saw:<input size=2 name=saw value='0' /><input type=checkbox name=sawm checked />
 <br>&#x222b;<input tabindex=8 type=checkbox name=ai />&#x2202;<input tabindex=9 type=checkbox name=ad />
@@ -218,13 +219,13 @@ function saw(x,n,m) {
   return x;
 }
 
-function recalc2d() {
+function recalc2d(mod) {
   var j,i,x=[],y=[],w=cv1.width,h=cv1.height,fx,n=f.nd2.value*1,t=ft(),wn=w/n,hn=h/n;
   var xi=xeval(f.xmin.value),xa=xeval(f.xmax.value),yi=xeval(f.ymin.value),ya=xeval(f.ymax.value),fx,fy,fx2,fy2,fx3,fy3;
   var zi=xeval(f.zmin.value),za=xeval(f.zmax.value);
-  var sw=f.saw.value*1,swm=f.sawm.checked,rgb=f.rgb.checked,c,z,z2,z3;
+  var sw=f.saw.value*1,swm=f.sawm.checked,rgb=f.rgb.checked,c,z,z2,z3,xy=[];
   var min=Infinity,max=-Infinity,mii,mij,mai,maj,sep=f.comma.checked?';':',';
-  rec=2;
+  rec=mod?mod:2;
   fx=xreplace(f.func.value);fx=fx.replace(/\bt\b/g,'('+t+')');
   fx2=xreplace(f.func2.value);fx2=fx2.replace(/\bt\b/g,'('+t+')');
   fx3=xreplace(f.func3.value);fx3=fx3.replace(/\bt\b/g,'('+t+')');
@@ -235,6 +236,7 @@ function recalc2d() {
       fy2=fx2.replace(/\bx\b/g,'('+x[i]+')');
       fy3=fx3.replace(/\bx\b/g,'('+x[i]+')');
     }
+    xy.push([]);
     for(j=0;j<n;j++) {
       z=eval(fy.replace(/\by\b/g,'('+y[j]+')'));
       if(z<min) min=z,mii=i,mij=j;else if(z>max) max=z,mai=i,maj=j;
@@ -254,16 +256,91 @@ function recalc2d() {
         c=crgb(z,z3,z2);
       } else
         c=z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1);
-      ctx.fillStyle=cstyle(c);
-      ctx.fillRect(i*w/n,j*h/n,wn,hn);
+      xy[i].push(z);
+      if(rec<=2) ctx.fillStyle=cstyle(c),ctx.fillRect(i*w/n,j*h/n,wn,hn);
     }
   }
   f.stat.value='min: '+r2(min,6)+'@'+r2(x[mii],6)+sep+r2(y[mij],6);
   f.stat2.value='max: '+r2(max,6)+'@'+r2(x[mai],6)+sep+r2(y[maj],6);
+
+  if(rec==4||rec==6) {
+    var w3=w*3/4,h3=h*3/4,w4=w/4,h4=h/4,fx,fy,fz,a=rec==6?-1:1,b=rec==6?1:0;
+    ctx.fillStyle='#fff',ctx.fillRect(0,0,w,h);
+    for(j=1;j<n;j++)
+      for(i=1;i<n;i++) {
+        z=xy[i][j],c=z<0?0xff:z>1?0xff0000:z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1);
+        fx=(i-1)*w3/n+(n-j-1)*h4/n,fy=(n-j-1)*h4/n;
+        quadh(ctx,cstyle(c),fx,fy+(a*xy[i-1][j]+b)*h3,fx+w3/n,fy+(a*xy[i][j]+b)*h3,fx+w3/n+h4/n,fy+h4/n+(a*xy[i][j-1]+b)*h3,fx+h4/n,fy+h4/n+(a*xy[i-1][j-1]+b)*h3);
+      }
+  } else if(rec>2) {
+    var ex,ey,fx,fy,zx,zy,gx=0.5,gy=0.5,a=[];
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#fff',ctx.fillRect(0,0,w,h),sx=gx*w/2,sy=gy*h/2,wn2=w/2/n,hn2=h/2/n;
+    ctx.lineWidth=1,ctx.strokeStyle='#000';
+    fx=(gx+0.5)*n/2-0.5,fy=(gy+0.5)*n/2-0.5;
+    for(i=0;i<n;i++) for(j=0;j<n;j++) a.push([i,j,Math.abs(fx-i),Math.abs(fy-j)]);
+    if(rec>3) a.sort(function(x,y) { var mx=x[2]>x[3]?x[2]:x[3],my=y[2]>y[3]?y[2]:y[3];return mx>my?1:mx<my?-1:(x[2]+x[3]-mx)-(y[2]+y[3]-my);});
+    else a.sort(function(x,y) { var mx=x[2]>x[3]?x[2]:x[3],my=y[2]>y[3]?y[2]:y[3];return mx<my?1:mx>my?-1:(y[2]+y[3]-my)-(x[2]+x[3]-mx);});
+    //a.sort(function(x,y) { return xy[x[0]][x[1]]-xy[y[0]][y[1]]});
+    for(k=0;k<a.length;k++) {
+      i=a[k][0],j=a[k][1],z=xy[i][j];
+      if(rec>3) {
+        z2=1-z,z3=(2-z)/2,fx=i*w/n,fy=j*h/n,ex=sx+i*wn2,ey=sy+j*hn2,zx=z*ex+z2*fx,zy=z*ey+z2*fy;
+	if(1) {
+	  if(zy>fy) quad(ctx,'#fff',zx,zy,fx,fy,fx+wn,fy,zx+wn*z3,zy);
+	  if(zy+hn*z3<fy+hn) quad(ctx,'#ddd',zx,zy+hn*z3,fx,fy+hn,fx+wn,fy+hn,zx+wn*z3,zy+hn*z3);
+	  if(zx>fx) quad(ctx,'#eee',zx,zy,fx,fy,fx,fy+hn,zx,zy+hn*z3);
+	  if(zx+wn*z3<fx+wn) quad(ctx,'#ccc',zx+wn*z3,zy,fx+wn,fy,fx+wn,fy+hn,zx+wn*z3,zy+hn*z3);
+	}
+      } else {
+        z=1-z;if(z>1) continue;
+        z2=1-z,z3=(2-z)/2,fx=i*w/n,fy=j*h/n,ex=sx+i*wn2,ey=sy+j*hn2,zx=z*ex+z2*fx,zy=z*ey+z2*fy;
+	if(1) {
+	  if(zy>ey) quad(ctx,'#fff',zx,zy,ex,ey,ex+wn2,ey,zx+wn*z3,zy);
+	  if(zy+hn*z3<ey+hn2) quad(ctx,'#ddd',zx,zy+hn*z3,ex,ey+hn2,ex+wn2,ey+hn2,zx+wn*z3,zy+hn*z3);
+	  if(zx>ex) quad(ctx,'#eee',zx,zy,ex,ey,ex,ey+hn2,zx,zy+hn*z3);
+	  if(zx+wn*z3<ex+wn2) quad(ctx,'#ccc',zx+wn*z3,zy,ex+wn2,ey,ex+wn2,ey+hn2,zx+wn*z3,zy+hn*z3);
+	}
+      }
+      //ctx.fillStyle=(i^j)&1?'#840':'#fc8';
+      z=xy[i][j],c=z<0?0xff:z>1?0xff0000:z<0.5?cmix(0xff,0xffffff,2*z):cmix(0xffffff,0xff0000,2*z-1);
+      ctx.fillStyle=cstyle(c);
+      ctx.fillRect(zx,zy,wn*z3,hn*z3);
+      ctx.beginPath();
+      ctx.rect(zx,zy,wn*z3,hn*z3);
+      ctx.stroke();
+    }
+  } else {
+    var cont=8;
+    for(j=0;j<n;j++)
+      for(i=1,z=Math.floor(xy[0][j]*cont);i<n;i++) {
+        z2=z,z=Math.floor(xy[i][j]*cont);
+        if(z2!=z) line(ctx,i*wn,j*hn,i*wn,(j+1)*hn);
+      }
+    for(i=0;i<n;i++)
+      for(j=1,z=Math.floor(xy[i][0]*cont);j<n;j++) {
+        z2=z,z=Math.floor(xy[i][j]*cont);
+        if(z2!=z) line(ctx,i*wn,j*hn,(i+1)*wn,j*hn);
+      }
+  }
 }
 
+function line(ctx,x,y,x2,y2) {
+  ctx.beginPath(); ctx.lineTo(x,y);ctx.lineTo(x2,y2);ctx.stroke();
+}
+function quadh(ctx,c,x,y,x2,y2,x3,y3,x4,y4) {var h=cv1.height;quad(ctx,c,x,h-y,x2,h-y2,x3,h-y3,x4,h-y4);}
+function quad(ctx,c,x,y,x2,y2,x3,y3,x4,y4) {
+  ctx.fillStyle=c;
+  ctx.beginPath(); ctx.lineTo(x,y);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.lineTo(x4,y4);ctx.closePath();
+  ctx.fill();ctx.stroke();
+}
+function sqr(x,y) { return x*x+y*y; }
+function sqd(x,y) { x=Math.abs(x),y=Math.abs(y);return x>y?x:y;}
+
 function recalc1() {
- if(rec) recalc2d();else recalc();
+ if(rec) {
+   recalc2d(rec);
+ } else recalc();
 }
 
 window.addEventListener('keydown',function(e) {
