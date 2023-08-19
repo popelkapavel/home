@@ -52,7 +52,7 @@ zoom:<input name=zoom value=30 size=4 onchange=_t2svg() />
 <input type=button onclick=_gen(1) value="O" title="circle: center+point" />
 <input type=button onclick=_gen(2) value="OO" title="circle: 2 points (right button: 3 points)" />
 <input type=button onclick=_gen(3) value="E" title="ellipse" />
-<input type=button onclick=_gen(4) value="R" title="rectangle" />
+<input type=button onclick=_gen(event.ctrlKey?34:4) value="R" title="rectangle" />
 <input type=button onclick=_gen(7) value="I" title="image" />
 <input type=button onclick=_gen(5) value="L" title="line" />
 <input type=button onclick=_gen(6) value="P" title="polygon" />
@@ -62,6 +62,7 @@ zoom:<input name=zoom value=30 size=4 onchange=_t2svg() />
 <input type=button onclick=_gen(31) value="Iso" title="Isometric box" />
 <input type=button onclick=_gen(32) value="5|" title="5 bar" />
 <input type=button onclick=_gen(33) value="5#" title="5 box" />
+<input type=button onclick=_gen(35+event.ctrlKey) value="()" title="Grain" />
 
 <br>
 <input style="margin-top:2px;" type=button onclick=_gen(9) value="path" title="path" />
@@ -96,7 +97,7 @@ width:<input name=strokew size=4 />
 <input type=button onclick=_colorr(4) value=">-<" title="switch red and blue" />
 <input type=button onclick=_colorr(-1) value="#3" title="short colors" />
 <input type=button onclick=_colorr(-2) value="#6" title="long colors" />
-<input type=button onclick=_colorr(8) value="<->" title="hue reverse" />
+<input type=button onclick=_colorr(event.shiftKey?16:event.ctrlKey?15:8) value="<->" title="hue reverse" />
 <input type=button onclick=_colorr(9) value="<" title="hue <" />
 <input type=button onclick=_colorr(10) value=">" title="hue <" />
 <input type=button onclick=_colorr(6) value="<<" title="hue <<" />
@@ -116,14 +117,21 @@ stroke-linecap:round|butt|square
 rx:<input name=repx title='(ctrl+*)'value=x size=10 /> <input name=repx2 title='+shift' value=x size=5 />
 ry:<input name=repy size=10 title='(ctrl+*)' value=y /><input name=repy2 title='+shift' value=y size=5 />
 <br>
+transform:
 <input type=button onclick=_tran(0) value="|" title="mirror x" />
 <input type=button onclick=_tran(1) value="-" title="mirror y" />
-<input type=button onclick=_tran(2) value="<)" title="rotate right" />
-<input type=button onclick=_tran(3) value="(>" title="rotate left" />
+<input type=button onclick=_tran(2) value="<)" title="rotate left" />
+<input type=button onclick=_tran(3) value="(>" title="rotate right" />
 <input type=button onclick=_tran(4) value="<" title="left" />
 <input type=button onclick=_tran(5) value=">" title="right" />
 <input type=button onclick=_tran(6) value="^" title="left" />
 <input type=button onclick=_tran(7) value="v" title="right" />
+<input type=button onclick=_tran(8+2*event.ctrlKey) value="s" title="scale -" />
+<input type=button onclick=_tran(9+2*event.ctrlKey) value="S" title="scale +" />
+<input type=button onclick=_tran(12+2*event.ctrlKey) value="<-" title="rotate left" />
+<input type=button onclick=_tran(13+2*event.ctrlKey) value="->" title="rotate right" />
+<input type=button onclick=_tran(16+2*event.ctrlKey) value="\" title="skew left" />
+<input type=button onclick=_tran(17+2*event.ctrlKey) value="/" title="skew right" />
 <br>
 search:<input name=search size=10 />
 <input name=replace size=10 />
@@ -293,13 +301,33 @@ function _rect(x,y,x2,y2,css) {
   return '<rect x="'+_t(x)+'" y="'+_t(y)+'" width="'+_t(w)+'" height="'+_t(h)+'" style="'+css+'" />';
 }
 
-function _gen(mode) {
-  var tag='',tag2=' />',css,v;
+function _infoa() {
   var m=/@: ([-+\d.]+),([-+\d.]+).*#: ([-+\d.]+),([-+\d.]+).* I: ([-+\d.]+)/.exec(f.info.value);
   if(!m) {m=/@: ([-+\d.]+),([-+\d.]+)/.exec(f.info.value);if(m) m.push(m[1],m[2],'0');}
   if(!m) m=['','','','',''];
+  return m;
+}
+function _gen(mode) {
+  var tag='',tag2=' />',css,v;
+  var m=_infoa();
+ // /@: ([-+\d.]+),([-+\d.]+).*#: ([-+\d.]+),([-+\d.]+).* I: ([-+\d.]+)/.exec(f.info.value);
+ // if(!m) {m=/@: ([-+\d.]+),([-+\d.]+)/.exec(f.info.value);if(m) m.push(m[1],m[2],'0');}
+ // if(!m) m=['','','','',''];
   console.log(m);
-  if(mode>=30&&mode<34) {
+  if(mode==36) {
+    var x=_t(+m[1]),y=_t(+m[2]),x2=_t(+x-m[3]),y2=_t(+y-m[4]),r=_sqrt2(x-x2,y-y2)/2;
+    tag='<path d="M '+_t(x)+','+_t(y)+' A'+_t(r)+','+_t(r)+' 0 0 0 '+_t(x2)+','+_t(y2)+' Z"';
+  } else if(mode==35) {
+    var x=+m[1],y=+m[2],w=-m[3],h=-m[4],i,a,r,d,dx=0,dy=0;
+    if(w<0) x+=w,w=-w;
+    if(h<0) y+=h,h=-h;
+    i=(d=w<h)?w:h,a=w+h-i,r=(a*a/i+i)/4;
+    if(d) x+=w/2,dy=h;else y+=h/2,dx=w;
+    tag='<path d="M '+_t(x)+','+_t(y)+' A'+_t(r)+','+_t(r)+' 0 0 0 '+_t(x+dx)+','+_t(y+dy)+' A'+_t(r)+','+_t(r)+' 0 0 0 '+_t(x)+','+_t(y)+' Z"';
+  } else if(mode==34) {
+    var x=_t(+m[1]),y=_t(+m[2]),x2=_t(+x-m[3]),y2=_t(+y-m[4]);
+    tag='<polygon points="'+x+','+y+' '+x2+','+y+' '+x2+','+y2+' '+x+','+y2+'"';
+  } else if(mode>=30&&mode<34) {
     css='stroke:'+(mode==32||mode==33?'none':_fill(1))+';stroke-linejoin:round;';
     if(v=f.strokew.value) css+='stroke-width:'+v+';';
     var c=_fill(0,2),c0=c&255,c1=(c>>8)&255,c2=(c>>16)&255,s=c0+c1+c2;
@@ -473,14 +501,25 @@ function _repeval(y,sh) {
   f.ta.selectionStart=s,f.ta.selectionEnd=s+r.length;
 }
 
+function _r3(x) { return Math.round(1000*x)/1000;}
+var _tran8=7/8,_tran9=9/8,_tran10=1,_tran12=5,_tran14=0,_tran16=1/8,_tran18=0;
 function _tran1(_,w,h,rx,ry) {
-  var x2;
+  var x2,a,c,s;
   if(_==0) rx=w-rx;
   else if(_==1) ry=h-ry;
   else if(_==2) x2=rx,rx=w/2+ry-h/2,ry=h/2-x2+w/2;
   else if(_==3) x2=rx,rx=w/2-ry+h/2,ry=h/2+x2-w/2;
   else if(_==4||_==5) rx+=(_&1)-0.5;
   else if(_==6||_==7) ry+=(_&1)-0.5;
+  else if(_==8) rx=_r3((rx-w/2)*_tran8+w/2),ry=_r3((ry-h/2)*_tran8+h/2);
+  else if(_==9) rx=_r3((rx-w/2)*_tran9+w/2),ry=_r3((ry-h/2)*_tran9+h/2);
+  else if(_==10) rx=_r3((rx-w/2)*_tran10+w/2),ry=_r3((ry-h/2)*_tran10+h/2);
+  else if(_==12||_==13||_==14) {
+    a=(_==14?_tran14:_tran12*(2*(_&1)-1))*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+    rx-=w/2,ry-=h/2,x2=rx;
+    rx=_r3(w/2+c*rx-s*ry),ry=_r3(h/2+s*x2+c*ry);
+  }
+  else if(_==16||_==17||_==18) rx+=(ry-h/2)*_tran16*(1-2*(_&1));
   return [rx,ry];
 }
 
@@ -492,9 +531,24 @@ function _tranr(_,w,h,r) {
   rx+=rw/2,ry+=rh/2;
   ry=_tran1(_,w,h,rx,ry),rx=ry[0],ry=ry[1];
   if(_==2||_==3) x2=rw,rw=rh,rh=x2;
+  if(_==8||_==9||_==10) x2=_==8?_tran8:_==9?_tran9:_tran10,rw=_r3(rw*x2),rh=_r3(rh*x2);
   rx-=rw/2,ry-=rh/2;
+  if(_==8||_==9||_==10) rx=_r3(rx),ry=_r3(ry);
   p=0,o='';
   for(i=0;i<a.length;i++) {m=a[i],o+=r.substring(p,m.idx)+(m[1]=='x'?rx:m[1]=='y'?ry:m[1]=='width'?rw:m[1]=='height'?rh:m[3]),p=m.idx+m[2].length;}
+  o=o+r.substr(p);
+  return o;
+}
+
+function _tranl(_,w,h,r) {
+  var x2,t,p,o,rx,ry,rw,rh,mx,my,mw,mh,m,ma=r.matchAll('\\s(x1|y1|x2|y2)\\s*="(.*?)"'),i,a=[];
+  for(m of ma) {m.idx=m.index+m[0].indexOf('"')+1;a.push(m);if(m[1]=='x1') mx=m;else if(m[1]=='y1') my=m;else if(m[1]=='x2') mw=m;else if(m[1]=='y2') mh=m;}
+  if(!(mx&&my&&mw&&mh)) return r;
+  rx=+mx[2],ry=+my[2],rw=+mw[2],rh=+mh[2];
+  ry=_tran1(_,w,h,rx,ry),rx=ry[0],ry=ry[1];
+  rh=_tran1(_,w,h,rw,rh),rw=rh[0],rh=rh[1];
+  p=0,o='';
+  for(i=0;i<a.length;i++) {m=a[i],o+=r.substring(p,m.idx)+(m[1]=='x1'?rx:m[1]=='y1'?ry:m[1]=='x2'?rw:m[1]=='y2'?rh:m[3]),p=m.idx+m[2].length;}
   o=o+r.substr(p);
   return o;
 }
@@ -505,6 +559,7 @@ function _tranc(_,w,h,r) {
   if(!(mx&&my&&mr)) return r;
   rx=+mx[2],ry=+my[2],rr=+mr[2];
   ry=_tran1(_,w,h,rx,ry),rx=ry[0],ry=ry[1];
+  if(_==8||_==9||_==10) x2=_==8?_tran8:_==9?_tran9:_tran10,rr=_r3(rr*x2);
   p=0,o='';
   for(i=0;i<a.length;i++) {m=a[i],o+=r.substring(p,m.idx)+(m[1]=='cx'?rx:m[1]=='cy'?ry:m[1]=='r'?rr:m[3]),p=m.idx+m[2].length;}
   o=o+r.substr(p);
@@ -544,6 +599,7 @@ function _trand(_,w,h,r) {
     a2=a,a=ma[i][1]=='A';
     if(a) { 
      if(_==2||_==3) x2=rx,rx=ry,ry=x2;
+     if(_==8||_==9||_==10) x2=_==8?_tran8:_==9?_tran9:_tran10,rx=_r3(rx*x2),ry=_r3(ry*x2);
     } else ry=_tran1(_,w,h,rx,ry),rx=ry[0],ry=ry[1];
     o+=_tranda(a2&&mir,r.substring(p,ma[i].index))+ma[i][1]+rx+','+ry;
     p=ma[i].index+ma[i][0].length;
@@ -556,8 +612,25 @@ function _tran(_) {
   var i,o,m,ma,t=f.ta.value,s=f.ta.selectionStart,e=f.ta.selectionEnd,r=t.substr(s,e-s),w=+f.width.value,h=+f.height.value;
   if(r=='') s=0,e=t.length,r=t;
   if(h<1) h=w;
-  o='',p=0,ma=r.matchAll('<rect\\s.*?(<|/>)');
+  if(_==10||_==11) {
+    var m=_infoa(),x=+m[1],y=+m[2],x2=x-m[3],y2=y-m[4];
+    var a=_sqrt2(x-w/2,y-h/2),b=_sqrt2(x2-w/2,y2-h/2);
+    if(!a||!b) return;
+    if(a>b) c=a,a=b,b=c;
+    if(_==11) c=a,a=b,b=c,_=10;
+    _tran10=a/b;
+  }
+  if(_==14||_==15) {
+    var m=_infoa(),x=+m[1],y=+m[2],x2=x-m[3],y2=y-m[4];
+    var a=180*(Math.atan2(y2,x2)-Math.atan2(y,x))/Math.PI;
+    if(_==15) a*=-1,_=14;
+    _tran14=a;
+  }
+  o='',p=0,ma=r.matchAll('<(rect|image)\\s.*?(<|/>)');
   for(m of ma) o+=r.substring(p,m.index)+_tranr(_,w,h,''+m[0]),p=m.index+m[0].length;
+  o+=r.substr(p);
+  r=o,o='',p=0,ma=r.matchAll('<line\\s.*?(<|/>)');
+  for(m of ma) o+=r.substring(p,m.index)+_tranl(_,w,h,''+m[0]),p=m.index+m[0].length;
   o+=r.substr(p);
   r=o,o='',p=0,ma=r.matchAll('<circle\\s.*?(<|/>)');
   for(m of ma) o+=r.substring(p,m.index)+_tranc(_,w,h,''+m[0]),p=m.index+m[0].length;
@@ -674,7 +747,9 @@ function _i765(dc,c0,c1,c2,sat) {
 function _color1(mode,c) {
   var c0=c&255,c1=(c>>8)&255,c2=(c>>16)&255,i,a,c3,x;
   if(c0<c1) i=c0,a=c1;else i=c1,a=c0;if(c2<i) i=c2;else if(c2>a) a=c2;
-  if(mode==13||mode==14) x=_i765(-45,c0,c1,c2,mode&1),c0=x[0],c1=x[1],c2=x[2];
+  if(mode==16) x=c1,c1=c2,c2=x;
+  else if(mode==15) x=c0,c0=c2,c2=x;
+  else if(mode==13||mode==14) x=_i765(-45,c0,c1,c2,mode&1),c0=x[0],c1=x[1],c2=x[2];
   else if(mode==11||mode==12) x=_i765(45,c0,c1,c2,mode&1),c0=x[0],c1=x[1],c2=x[2];
   else if(mode>=6&&mode<=10) c3=1,c=rgbhue(c,mode==8,mode==9?-32:mode==10?32:mode==6?-64:mode==7?64:0);
   else if(mode==5) x=c0,c0=c2,c2=c1,c1=x;
