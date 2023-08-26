@@ -240,7 +240,18 @@ fill</x>
 edge</x>
 <input name=des type=radio value=9 />
 <x onclick=_setdes(9)>
-col
+<svg width=16 height=16 style=vertical-align:bottom >
+<rect x="02" y="2" width="4" height="4" style="fill:#f8c;stroke:#000;" />
+<rect x="06" y="2" width="4" height="4" style="fill:#cf8;stroke:#000;" />
+<rect x="10" y="2" width="4" height="4" style="fill:#8cf;stroke:#000;" />
+<rect x="02" y="6" width="4" height="4" style="fill:#8ff;stroke:#000;" />
+<rect x="06" y="6" width="4" height="4" style="fill:#f8f;stroke:#000;" />
+<rect x="10" y="6" width="4" height="4" style="fill:#ff8;stroke:#000;" />
+<rect x="02" y="10" width="4" height="4" style="fill:#fc8;stroke:#000;" />
+<rect x="06" y="10" width="4" height="4" style="fill:#8fc;stroke:#000;" />
+<rect x="10" y="10" width="4" height="4" style="fill:#c8f;stroke:#000;" />
+</svg>
+color
 </x>
 <!--
 <input name=des type=radio value=8 />
@@ -271,7 +282,7 @@ col
 <tr><td>&#9899;</td><td>&#9898;</td> <td><select name=w1 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
 <tr><td>&#9898;</td><td>&#9899;</td> <td><select name=w2 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
 <tr><td>&#9898;</td><td>&#9898;</td> <td><select name=w3 onchange=whitechg(2)><option value=x>X</option><option value=b>&#9899;</option><option value=w>&#9898;</option></select> </td></tr>
-<tr><td colspan=3><input type=color name=uco value=#6688aa onchange=ucochg(this,event); onclick=ucoclick(this,event) /></td></tr>
+<tr><td colspan=3><input type=color name=uco value=#6688aa onchange=ucochg(this,event); onclick=ucoclick(this,event) title="ctrl,shift rotate mem colors, ctrl&shift reset mem colors" /></td></tr>
 </table>
 
 <script type="text/javascript">
@@ -2849,7 +2860,8 @@ function _pdfc(x1,y1,x2,y2,x3,y3) {
 }
 function _pdf_color(c) {
   var i=parseInt(c.substring(1),16),r,g,b;
-  r=17*((i>>8)&15),g=17*((i>>4)&15),b=17*((i>>0)&15);
+  if(c.length==7) r=(i>>16)&255,g=(i>>8)&255,b=i&255;
+  else r=17*((i>>8)&15),g=17*((i>>4)&15),b=17*((i>>0)&15);
   return ''+_pdfx(r/255)+' '+_pdfx(g/255)+' '+_pdfx(b/255);
 }
 function _pdfline(w,x,y,x2,y2) {
@@ -3652,7 +3664,9 @@ function _mdesign(dm,up,mu,ev) {
  } else if(dm==8) {
    _dshift(px,py,mu,up?1:-1);
  } else if(dm==9) {
-   if(up<1) _setuco(lx,ly);
+   var c;
+   if(up<0&&ev.shiftKey&&(c=_getuco(lx,ly))) f.uco.value=c,f.uco.value=c;
+   else if(up<1) _setuco(lx,ly);
  } else if(dm==1||px==lx&&py==ly) {
     var c=board[py][px],y;
     e=_extent(lx,ly);
