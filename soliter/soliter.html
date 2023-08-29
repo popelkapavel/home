@@ -2055,8 +2055,9 @@ function _polyex3(xy,e) {
 
 function _drawpeg15(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(_points15(x,y),0.75),b=_border15(x,y);
@@ -2078,8 +2079,9 @@ function _drawpeg15(x,y,wh,p) {
 
 function _drawpeg8(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(_points8(x,y),0.75),b=_border8(x,y);
@@ -2101,8 +2103,9 @@ function _drawpeg8(x,y,wh,p) {
 
 function _drawpeg9(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(_points9(x,y),0.75),b=_border9(x,y);
@@ -2124,8 +2127,9 @@ function _drawpeg9(x,y,wh,p) {
 
 function _drawpeg11(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(_points11(x,y),0.75),b=_border11(x,y);
@@ -2147,8 +2151,9 @@ function _drawpeg11(x,y,wh,p) {
 
 function _drawpeg16(x,y,wh,p) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(_points16(x,y),0.75),b=_border16(x,y);
@@ -2173,8 +2178,9 @@ function _drawpeg3(x,y,wh,p) {
 }
 function _drawpeg3x(x,y,wh,p,points,border) {
   if(wh) ctx.lineWidth=2;
+  var pc=_getpgc(x,y);
   ctx.beginPath();
-  ctx.fillStyle=wh?'#fff':'#000';
+  ctx.fillStyle=pc?wh?_whi(pc):pc:wh?'#fff':'#000';
   if(p) {
     if(rou) {
       var xy=_polyex2(points(x,y),0.75),b=border(x,y);
@@ -3915,9 +3921,9 @@ function _can5(x,y,qx,qy,rx,ry) {
 }
 //function _can3(x,y,dx,dy) { return _can6(x,y,dx,dy);}
 
-function _switch(x,y,px,py) {
+function _switch(x,y) {
   var c=board[y][x],c2=c=='o'?'w':c=='w'?'o':c;
-  if(c2!=c) { board[y][x]=c2;if(px||py) _setpgc(x,y,_getpgc(px,py));}
+  if(c2!=c) board[y][x]=c2;
 }
 function _switchP(x,y,px,py) {
   var c=board[y][x],c2=c=='o'?'w':c=='w'?'x':c=='x'?'o':c;
@@ -3929,10 +3935,10 @@ function _switchN(x,y,px,py) {
 }
 
 function _switch9(x,y,mask) {
-  var a=mask&2,b=mask&4,c=mask&1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
-  if(c&&onoff!=2) _f1(x,y);
-  if(a) _f2(x,y-1),_f2(x,y+1),_f2(x-1,y),_f2(x+1,y);
-  if(b) _f2(x+1,y-1),_f2(x+1,y+1),_f2(x-1,y-1),_f2(x-1,y+1);
+  var a=mask&2,b=mask&4,c=mask&1,xy=[];
+  if(a) xy.push(x,y-1,x,y+1,x-1,y,x+1,y);
+  if(b) xy.push(x+1,y-1,x+1,y+1,x-1,y-1,x-1,y+1);
+  _switchi(x,y,xy,u);
 }
 
 function _border2(x,y) {
@@ -3961,9 +3967,7 @@ function _border5(x,y) {
 }
 
 function _switch5(x,y,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,a,r=(((1^y)&1)<<1)|(1^x&1),_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,a,r=(((1^y)&1)<<1)|(1^x&1),xy=[];
   if(r==0) a=[x-1,y+1,x+1,y,x,y+1];
   else if(r==1) a=[x-1,y,x-1,y-1,x,y+1];
   else if(r==2) a=[x,y-1,x+1,y+1,x+1,y];
@@ -3973,7 +3977,8 @@ function _switch5(x,y,u) {
   //else if(r==2) _f2(x,y-1),_f2(x+1,y+1),_f2(x+1,y);
   //else if(r==3) _f2(x-1,y),_f2(x,y-1),_f2(x+1,y-1);
   if(a) for(i=0;i<6;i+=2)
-    if(!_blocked(x,y,a[i],a[i+1])) _f2(a[i],a[i+1]);
+    if(!_blocked(x,y,a[i],a[i+1])) xy.push(a[i],a[i+1]);
+  _switchi(x,y,xy,u);
 }
 
 function _switch4(x,y,u) {
@@ -3989,86 +3994,90 @@ function _border13(x,y,f) {
    :[0,-1,-1,-1,1,-1,2,-1,3,-1,-1,-2,0,-2,1,-2 ,1,0,2,0,1,1,0,1,0,2,3,0,3,1,2,1 ,-1,0,-1,1,-2,0,-2,-1,-3,-1,-2,1,-3,-1,-3,0 ]
 }
 
-function _switch3(x,y,mask,d) {
-  var i,x2,y2,m,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch,b=_border13(x,y);
-  if(onoff!=2) _f1(x,y);
+function _switch3(x,y,mask,d,u) {
+  var i,x2,y2,m,xy=[],b=_border13(x,y);
   for(i=2*d,m=1;m<0x1000000;i+=i==46?-46:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _border14(x,y,f) {
   return [-1,0,-1,-1,0,-1,1,-1,1,0,1,1,0,1,-1,1];//:[-1,0,0,-1,1,0,0,1];
 }
 
-function _switch14(x,y,mask,d,u) {
+function _switchi(x,y,xy,u) {
   var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,x2,y2,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border14(x,y);
+  var i,x2,y2,c,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
   if(onoff!=2) _f1(x,y);
+  c=_getpgc(x,y);
+  for(i=0;i<xy.length;i+=2) {
+    _f2(x2=xy[i],y2=xy[i+1]);
+    _setpgc(x2,y2,c);
+  }
+}
+function _switch14(x,y,mask,d,u) {
+  var i,x2,y2,m,xy=[],b=_border14(x,y);
   for(i=2*d,m=1;m<256;i+=i==14?-14:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2,x,y);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _switch15(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,m,x2,y2,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border15(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,x2,y2,xy=[],b=_border15(x,y);
   for(i=2*d,m=1;m<32;i+=i==8?-8:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _switch16(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border16(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,x2,y2,xy=[],b=_border16(x,y);
   for(i=2*d,m=1;m<64;i+=i==10?-10:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _switch16old(x,y,mask) {
-  var dx=y&1?0:-1,a=mask&2,b=mask&4,c=mask&1,_f1=onoff>3?_switchN:onoff>2?_switchP:_switch,_f2=onoff>2?_switchP:_switch;
-  if(c&&onoff!=2) _f1(x,y);
-  if(a) _f2(x-1,y);if(b) _f2(x+1,y);
-  if(b) _f2(x+dx,y-1);if(a) _f2(x+dx+1,y+1);
-  if(a) _f2(x+dx+1,y-1);if(b) _f2(x+dx,y+1);
+  var dx=y&1?0:-1,a=mask&2,b=mask&4,c=mask&1,xy=[];
+  if(a) xy.push(x-1,y);if(b) xy.push(x+1,y);
+  if(b) xy.push(x+dx,y-1);if(a) xy.push(x+dx+1,y+1);
+  if(a) xy.push(x+dx+1,y-1);if(b) xy.push(x+dx,y+1);
+  _switchi(x,y,xy,u);
 }
 
 function _switch8(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border8(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,b=_border8(x,y);
   for(i=2*d,m=1;m<16;i+=i==6?-6:2,m<<=1) 
-   if(mask&m) _f2(x+b[i],y+b[i+1]);
+   if(mask&m) xy.push(x+b[i],y+b[i+1]);
+  _switchi(x,y,xy,u);
 }
 
 function _switch11(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var x2,y2,i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border11(x,y);
-  if(onoff!=2) _f1(x,y);
+  var x2,y2,i,m,xy=[],b=_border11(x,y);
   for(i=2*d,m=1;m<16;i+=i==6?-6:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _switch18(x,y,mask,d,u) {
   var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border18(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[],b=_border18(x,y);
   if((mask&0x8)&&(mask&0x80)) mask^=0x8;
   if((mask&0x800)&&(mask&0x8000)) mask^=0x800;
   for(i=2*d,m=1;m<65536;i+=i==30?-30:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
 function _switch19(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border19(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[],b=_border19(x,y);
   if((mask&0x8)&&(mask&0x80)) mask^=0x8;
   if((mask&0x800)&&(mask&0x8000)) mask^=0x800;
   for(i=2*d,m=1;m<65536;i+=i==30?-30:2,m<<=1) 
-   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) _f2(x2,y2);
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
+  _switchi(x,y,xy,u);
 }
 
-function _line23(x,y,m,dx,dy,dic,_f2) {
+function _line23(x,y,m,dx,dy,dic,xy) {
   var px=x,py=y,xy1,v,b,k,n=88;
   m&=3;
   if(!m) m=3;
@@ -4079,7 +4088,7 @@ function _line23(x,y,m,dx,dy,dic,_f2) {
       if(!(b=board[y])||!_xo(b[x])) break;
       if(_blocked(x2,y2,x,y)) break;
       if(!(m&(1<<(1&(px^py^x^y))))) continue;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   } else {
     for(;n--;) {
@@ -4088,60 +4097,58 @@ function _line23(x,y,m,dx,dy,dic,_f2) {
       if(!(b=board[y])||!_xo(b[x])) break;
       if(_blocked(x2,y2,x,y)) break;
       if(!(m&(1<<(1&(px^x))))) continue;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   }
 }
 
 function _switch23(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,j,k,k2,j2,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,dic={};
-  if(onoff!=2) _f1(x,y);
+  var i,j,k,k2,j2,c,b,m,xy=[],dic={};
 
   var e=1^(y&1)^(x&1),dx=e?-1:1,dy=e?1:-1;
   mask&=0xffffff,mask=(mask<<d)|(mask>>(24-d));
 
-  if(mask&0x03) _line23(x,y,mask&3,-dx,dy,dic,_f2);
-  if(mask&0x0c) _line23(x,y,(mask>>2)&3,dx,dy,dic,_f2);
-  if(mask&0x0300) _line23(x,y,(mask>>8)&3,+dx,0,dic,_f2);
-  if(mask&0x0c00) _line23(x,y,(mask>>10)&3,+dx,-dy,dic,_f2);
-  if(mask&0x030000) _line23(x,y,(mask>>16)&3,-dx,-dy,dic,_f2);
-  if(mask&0x0c0000) _line23(x,y,(mask>>18)&3,-dx,0,dic,_f2);
+  if(mask&0x03) _line23(x,y,mask&3,-dx,dy,dic,xy);
+  if(mask&0x0c) _line23(x,y,(mask>>2)&3,dx,dy,dic,xy);
+  if(mask&0x0300) _line23(x,y,(mask>>8)&3,+dx,0,dic,xy);
+  if(mask&0x0c00) _line23(x,y,(mask>>10)&3,+dx,-dy,dic,xy);
+  if(mask&0x030000) _line23(x,y,(mask>>16)&3,-dx,-dy,dic,xy);
+  if(mask&0x0c0000) _line23(x,y,(mask>>18)&3,-dx,0,dic,xy);
 
   //if(mask&0x01)  for(i=1,k2=x,j2=y;(b=board[j=y+dy*i])&&_xo(b[k=x-dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x02)  for(i=1,k2=x,j2=y;(b=board[j=y+dy*i])&&_xo(b[k=x-dx*(i-1)])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x04)  for(i=1,k2=x,j2=y;(b=board[j=y+dy*i])&&_xo(b[k=x+dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x08)  for(i=mask&0x02?2:1,k2=x,j2=y;(b=board[j=y+dy*i])&&_xo(b[k=x+dx*(i-1)])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&0x10)  for(i=1;(b=board[j=y-dy*i])&&_xo(b[k=x]);i++) _f2(k,j);
+  if(mask&0x10)  for(i=1;(b=board[j=y-dy*i])&&_xo(b[k=x]);i++) xy.push(k,j);
   //if(mask&0x010000)  for(i=1,k2=x,j2=y;(b=board[j=y-dy*i])&&_xo(b[k=x-dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x020000)  for(i=1,k2=x,j2=y;(b=board[j=y-dy*(i-1)])&&_xo(b[k=x-dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x040000) for(i=1,k2=x,j2=y;_xo(board[y][j=x-dx*2*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(j,y);
   //if(mask&0x080000) for(i=mask&0x020000?2:1,k2=x,j2=y;_xo(board[y][j=x-dx*(2*i-1)])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(j,y);
-  if(mask&0x100000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x+dx*(((i-1)>>1)*3+3-(i&1))]);i++) _f2(k,j);
+  if(mask&0x100000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x+dx*(((i-1)>>1)*3+3-(i&1))]);i++) xy.push(k,j);
   //if(mask&0x0100) for(i=1,k2=x,j2=y;_xo(board[y][j=x+dx*2*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(j,y);
   //if(mask&0x0200) for(i=1,k2=x,j2=y;_xo(board[y][j=x+dx*(2*i-1)])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(j,y);
   //if(mask&0x0400)  for(i=1,k2=x,j2=y;(b=board[j=y-dy*i])&&_xo(b[k=x+dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
   //if(mask&0x0800)  for(i=mask&0x0200?2:1,k2=x,j2=y;(b=board[j=y-dy*(i-1)])&&_xo(b[k=x+dx*i])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&0x1000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x-dx*(((i-1)>>1)*3+3-(i&1))]);i++) _f2(k,j);
+  if(mask&0x1000)  for(i=1;(b=board[j=y+dy*((i+1)>>1)])&&_xo(b[k=x-dx*(((i-1)>>1)*3+3-(i&1))]);i++) xy.push(k,j);
+  _switchi(x,y,xy,u);
 }
 
 function _switch24(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,j,k,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,j,k,c,b,m,xy=[];
 
   mask&=255,mask=(mask<<d)|(mask>>(8-d));
-  if(mask&1) for(i=1;_xo(board[y][j=x-i])&&!_blocked(j+1,y,j,y);i++) _f2(j,y);
-  if(mask&2)  for(i=1;(b=board[j=y-i])&&_xo(b[k=x-i]);i++) _f2(k,j);
-  if(mask&4)  for(i=1;(b=board[j=y-i])&&_xo(b[x])&&!_blocked(x,j+1,x,j);i++) _f2(x,j);
-  if(mask&8) for(i=1;(b=board[j=y-i])&&_xo(b[k=x+i]);i++) _f2(k,j);
-  if(mask&16)  for(i=1;_xo(board[y][j=x+i])&&!_blocked(j-1,y,j,y);i++) _f2(j,y);
-  if(mask&32)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x+i]);i++) _f2(k,j);
-  if(mask&64)  for(i=1;(b=board[j=y+i])&&_xo(b[x])&&!_blocked(x,j-1,x,j);i++) _f2(x,j);
-  if(mask&128)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x-i]);i++) _f2(k,j);
+  if(mask&1) for(i=1;_xo(board[y][j=x-i])&&!_blocked(j+1,y,j,y);i++) xy.push(j,y);
+  if(mask&2)  for(i=1;(b=board[j=y-i])&&_xo(b[k=x-i]);i++) xy.push(k,j);
+  if(mask&4)  for(i=1;(b=board[j=y-i])&&_xo(b[x])&&!_blocked(x,j+1,x,j);i++) xy.push(x,j);
+  if(mask&8) for(i=1;(b=board[j=y-i])&&_xo(b[k=x+i]);i++) xy.push(k,j);
+  if(mask&16)  for(i=1;_xo(board[y][j=x+i])&&!_blocked(j-1,y,j,y);i++) xy.push(j,y);
+  if(mask&32)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x+i]);i++) xy.push(k,j);
+  if(mask&64)  for(i=1;(b=board[j=y+i])&&_xo(b[x])&&!_blocked(x,j-1,x,j);i++) xy.push(x,j);
+  if(mask&128)  for(i=1;(b=board[j=y+i])&&_xo(b[k=x-i]);i++) xy.push(k,j);
+  _switchi(x,y,xy,u);
 }
 
-function _line27(x,y,m,dx,dy,dic,_f2) {
+function _line27(x,y,m,dx,dy,dic,xy) {
   var px=x,py=y,x2,y2,xy1,v,b,k,n=88;
   if(dx&&dy) {
     for(;n--;) {
@@ -4150,7 +4157,7 @@ function _line27(x,y,m,dx,dy,dic,_f2) {
       x^=1;
       x--;
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
       x3=x,y3=y;
       var o=0,x2,y2,xx,xy,i,p=0;
       for(i=1;i<=2;i++) {
@@ -4160,7 +4167,7 @@ function _line27(x,y,m,dx,dy,dic,_f2) {
 	  else x2=x-1+(xy?dx:0),y2=y+(xy?0:dy);
 	  x--;
 	  if((b=board[y2])&&_xo(b[x2])&&!_blocked(x2,y2,x3,y3)) {
-	    if(!dic[k=_k25(x2,y2)]) dic[k]=1,_f2(x2,y2);
+	    if(!dic[k=_k25(x2,y2)]) dic[k]=1,xy.push(x2,y2);
             if(!_blocked(x2,y2,x+dx,y+dy)) p++;
 	  }
         }
@@ -4169,7 +4176,7 @@ function _line27(x,y,m,dx,dy,dic,_f2) {
       x3=x,y3=y;
       x+=dx,y+=dy;
       if(!(b=board[y])||!_xo(b[x])) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   } else {
     var x2=(x+1)&3,x3=(x2^(x2>>1))&1,x4;
@@ -4188,25 +4195,24 @@ function _line27(x,y,m,dx,dy,dic,_f2) {
         if(m==2&&(x4&1)==(x2&1)) continue;
       }
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   }
 }
 
 function _switch27(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var dd=1^(y&1)^(x&1),xx=x+1+2*(y&1),x1=xx&1,x2=!!(xx&2),b=board[y],dic={};
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[];
 
   //console.log(x,y,d,x1,x2);
   mask&=0xfffff,mask=(mask<<d)|(mask>>(3-d));
-  if(mask&1) _line27(x,y,0,x2?0:x1?1:-1,x2?x1?-1:1:0,dic,_f2)
-  if(mask&2) _line27(x,y,0,x2?x1?1:-1:0,x2?0:x1?1:-1,dic,_f2)
-  if(mask&4) _line27(x,y,3,x1?-1:1,x1^x2?-1:1,dic,_f2)
+  if(mask&1) _line27(x,y,0,x2?0:x1?1:-1,x2?x1?-1:1:0,dic,xy)
+  if(mask&2) _line27(x,y,0,x2?x1?1:-1:0,x2?0:x1?1:-1,dic,xy)
+  if(mask&4) _line27(x,y,3,x1?-1:1,x1^x2?-1:1,dic,xy)
+  _switchi(x,y,xy,u);
 }
 
-function _line22(x,y,m,dx,dy,dic,_f2) {
+function _line22(x,y,m,dx,dy,dic,xy) {
   var x3,y3,px=x,py=y,r,v,b,k,n=88;
   if(dx&&dy) {
     var r=(((y+1)&1)<<1)|((x+1)&1),u=(x+1)&~1,v=(y+1)&~1,p=dx==dy;
@@ -4223,7 +4229,7 @@ function _line22(x,y,m,dx,dy,dic,_f2) {
         x=u+(r&1)-1,y=v+(r&2?1:0)-1;
       }
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   } else {
     var l,p=0,r2,r=(((y+1)&1)<<1)|((x+1)&1),u=(x+1)&~1,v=(y+1)&~1,o=0,t=dx+dy>0?3:0;
@@ -4264,26 +4270,25 @@ function _line22(x,y,m,dx,dy,dic,_f2) {
         x3=u+((dy?1:0)^(r2&1))-1,y3=v+(r2&2?1:0)-1;
         if(!_blocked(x,y,x3,y3)) p=1;
       }
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
       o=0;
     }
   }
 }
 
 function _switch22(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var r=(((y+1)&1)<<1)|((x+1)&1),dic={};
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[];
 
   //console.log(x,y,d,x1,x2);
   mask&=0x7,mask=(mask<<d)|(mask>>(3-d));
-  if(mask&1) _line22(x,y,0,r==0||r==1?1:-1,r==0||r==2?-1:1,dic,_f2)
-  if(mask&2) _line22(x,y,0,r==0||r==2?1:-1,r==2||r==3?-1:1,dic,_f2)
-  if(mask&4) _line22(x,y,0,r==0?-1:r==3?1:0,r==1?-1:r==2?1:0,dic,_f2)
+  if(mask&1) _line22(x,y,0,r==0||r==1?1:-1,r==0||r==2?-1:1,dic,xy)
+  if(mask&2) _line22(x,y,0,r==0||r==2?1:-1,r==2||r==3?-1:1,dic,xy)
+  if(mask&4) _line22(x,y,0,r==0?-1:r==3?1:0,r==1?-1:r==2?1:0,dic,xy)
+  _switchi(x,y,xy,u);
 }
 
-function _line21(x,y,i,dic,_f2) {
+function _line21(x,y,i,dic,xy) {
   var x3,y3,px=x,py=y,r,v,b,k,n=88;
   var d=(x+1)%2,cx=(x+1)>>1,dd=(cx+2*(y&1))%3+3*d,pdd=dd,xy,dx;
   if(i&1) {
@@ -4298,7 +4303,7 @@ function _line21(x,y,i,dic,_f2) {
       else if(pdd==4) x++;
       else if(pdd==5) xy=[[dx+2,1,2],[1,0,4],[1,0,5],[-1,0,0],[dx+2,1,3],[dx+1,1,1]][dd],x+=xy[0],y+=xy[1],dd=xy[2];
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   } else {
     pdd=(dd+(i==2?3:0))%6;
@@ -4313,64 +4318,62 @@ function _line21(x,y,i,dic,_f2) {
       else if(pdd==5) xy=[[1,0,3],[1,0,4],[dx+2,-1,1],[dx+2,-1,5],[1,0,2],[1,0,0]][dd];
       x+=xy[0],y+=xy[1],dd=xy[2];
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   }
 }
 
 function _switch21(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var r=(((y+1)&1)<<1)|((x+1)&1),dic={};
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[];
 
   mask&=0xf,mask=rol(4,mask,d);
-  if(mask&1) _line21(x,y,0,dic,_f2)
-  if(mask&2) _line21(x,y,1,dic,_f2)
-  if(mask&4) _line21(x,y,2,dic,_f2)
-  if(mask&8) _line21(x,y,3,dic,_f2)
+  if(mask&1) _line21(x,y,0,dic,xy)
+  if(mask&2) _line21(x,y,1,dic,xy)
+  if(mask&4) _line21(x,y,2,dic,xy)
+  if(mask&8) _line21(x,y,3,dic,xy)
+  _switchi(x,y,xy,u);
 }
 
-function _line28(x,y,m,dx,dy,dic,_f2) {
-  var n=88,x3,y3,d,dd,cx,xy,bx;
+function _line28(x,y,m,dx,dy,dic,xy) {
+  var n=88,x3,y3,d,dd,cx,aa,bx;
   for(;n--;) {
     x3=x,y3=y;
     d=(x+2)%3,bx=y&1?0:-3;
     if(dy) {
       if(dy<0) {
-        if(dx<0) xy=[[bx+2,-1],[bx,-1],[-2,0]][d];
-        else xy=[[bx+4,-1],[-1,0],[bx+3,-1]][d];
+        if(dx<0) aa=[[bx+2,-1],[bx,-1],[-2,0]][d];
+        else aa=[[bx+4,-1],[-1,0],[bx+3,-1]][d];
       } else {
-        if(dx<0) xy=[[1,0],[bx-1,1],[bx,1]][d];
-        else xy=[[2,0],[bx+3,1],[bx+1,1]][d];
+        if(dx<0) aa=[[1,0],[bx-1,1],[bx,1]][d];
+        else aa=[[2,0],[bx+3,1],[bx+1,1]][d];
       }
     } else {
-      if(dx<0) xy=[[-3,0],[-2,0],[-1,0]][d];
-      else xy=[[3,0],[1,0],[2,0]][d];
+      if(dx<0) aa=[[-3,0],[-2,0],[-1,0]][d];
+      else aa=[[3,0],[1,0],[2,0]][d];
     }
-    x+=xy[0],y+=xy[1];
+    x+=aa[0],y+=aa[1];
     if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-    if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+    if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
   }
 }
 
 function _switch28(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var r=(x+2)%3,dic={};
-  var i,m2,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,m2,m,xy=[];
 
   console.log(x,y,d,mask);
   mask&=0xffff,mask=(mask<<d)|(mask>>(4-d));
-  if(mask&(r==1?1<<2:r==2?1<<3:0)) _line28(x,y,0,-1,0,dic,_f2)
-  if(mask&(r==1?1<<0:r==2?1<<1:0)) _line28(x,y,0,+1,0,dic,_f2)
-  if(mask&(r==1?0:r==2?1<<0:1<<1)) _line28(x,y,0,-1,-1,dic,_f2)
-  if(mask&(r==1?1<<3:r==2?0:1<<2)) _line28(x,y,0,+1,-1,dic,_f2)
-  if(mask&(r==1?1<<1:r==2?0:1<<0)) _line28(x,y,0,-1,+1,dic,_f2)
-  if(mask&(r==1?0:r==2?1<<2:1<<3)) _line28(x,y,0,+1,+1,dic,_f2)
+  if(mask&(r==1?1<<2:r==2?1<<3:0)) _line28(x,y,0,-1,0,dic,xy)
+  if(mask&(r==1?1<<0:r==2?1<<1:0)) _line28(x,y,0,+1,0,dic,xy)
+  if(mask&(r==1?0:r==2?1<<0:1<<1)) _line28(x,y,0,-1,-1,dic,xy)
+  if(mask&(r==1?1<<3:r==2?0:1<<2)) _line28(x,y,0,+1,-1,dic,xy)
+  if(mask&(r==1?1<<1:r==2?0:1<<0)) _line28(x,y,0,-1,+1,dic,xy)
+  if(mask&(r==1?0:r==2?1<<2:1<<3)) _line28(x,y,0,+1,+1,dic,xy)
+  _switchi(x,y,xy,u);
 }
 
-function _line29(x,y,m,dx,dy,dic,_f2) {
+function _line29(x,y,m,dx,dy,dic,xy) {
   var x3,y3,n=88;
   for(;n--;) {
     x3=x,y3=y;
@@ -4398,14 +4401,12 @@ function _line29(x,y,m,dx,dy,dic,_f2) {
       x+=2*dx;
     }
     if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-    if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+    if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
   }
 }
 function _switch29(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var r=(x+2)%3,cx=(x+2-r)/3,dd=1^(y&1)^(cx&1),dic={};
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[];
 
   //console.log(x,y,d,x1,x2);
   mask&=0xffff;
@@ -4420,13 +4421,14 @@ function _switch29(x,y,mask,d,u) {
   if(mask&16) mx|=1<<((a+(xr?1:4))%6);
   if(mask&32) mx|=1<<((a+(xr?0:5))%6);
   if(mx) {
-    if(mx&8) _line29(x,y,0,1,0,dic,_f2)
-    if(mx&1) _line29(x,y,0,-1,0,dic,_f2)
-    if(mx&16) _line29(x,y,0,1,1,dic,_f2)
-    if(mx&32) _line29(x,y,0,-1,1,dic,_f2)
-    if(mx&4) _line29(x,y,0,1,-1,dic,_f2)
-    if(mx&2) _line29(x,y,0,-1,-1,dic,_f2)
+    if(mx&8) _line29(x,y,0,1,0,dic,xy)
+    if(mx&1) _line29(x,y,0,-1,0,dic,xy)
+    if(mx&16) _line29(x,y,0,1,1,dic,xy)
+    if(mx&32) _line29(x,y,0,-1,1,dic,xy)
+    if(mx&4) _line29(x,y,0,1,-1,dic,xy)
+    if(mx&2) _line29(x,y,0,-1,-1,dic,xy)
   }
+  _switchi(x,y,xy,u);
 }
 
 function _f25(x) { return x+1;}
@@ -4434,9 +4436,9 @@ function _t25(x) { return x-1;}
 function _k25(x,y) { return (x<<16)|y;}
 
 
-function _line25(x,y,m,dx,dy,dic,_f2) {
+function _line25(x,y,m,dx,dy,dic,xy) {
   var x4,px=x,py=y,cx=_f25(x),xy1,v,r=[],k,n=88;
-  if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y)
+  if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y)
   var x3=x,y3=y;
   if(dx&&dy) {
     for(;n--;x3=x,y3=y) {
@@ -4452,7 +4454,7 @@ function _line25(x,y,m,dx,dy,dic,_f2) {
       x=_t25(x);
       console.log(x,y,x3,y3);
       if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-      if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+      if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
     }
   } else if(dx||dy) {
     if(dx) {
@@ -4461,17 +4463,17 @@ function _line25(x,y,m,dx,dy,dic,_f2) {
         v=(((x+1)>>1)+y)&1;
         if(v&&((x&1)==(dx<0))) {
           x4=x+3*dx,c=0,x2=_t25(x);
-          if((m&1)&&_xo(b[x2=x+(dx<0?2:1)*dx])&&!_blocked(x2,y,x3,y3)) {c=!_blocked(x2,y,x4,y);if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
-          if((m&2)&&_xo(b[x2=x+(dx<0?1:2)*dx])&&!_blocked(x2,y,x3,y3)) {c|=!_blocked(x2,y,x4,y);if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
+          if((m&1)&&_xo(b[x2=x+(dx<0?2:1)*dx])&&!_blocked(x2,y,x3,y3)) {c=!_blocked(x2,y,x4,y);if(!dic[k=_k25(x2,y)]) dic[k]=1,xy.push(x2,y);}
+          if((m&2)&&_xo(b[x2=x+(dx<0?1:2)*dx])&&!_blocked(x2,y,x3,y3)) {c|=!_blocked(x2,y,x4,y);if(!dic[k=_k25(x2,y)]) dic[k]=1,xy.push(x2,y);}
           if(!c||!_xo(b[x=x4])) break;
-          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
         } else {
           x+=dx;
           if(!v) {
             if(((x&1)!=(dx>0))) x+=dx;
           }
           if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
         }
       }
     } else {
@@ -4480,11 +4482,11 @@ function _line25(x,y,m,dx,dy,dic,_f2) {
         if(!v&&((x&1)==(dy<0))) {
           y+=dy,b=board[y];
           x2=((x-1)&~1)+1,x4=x2+(dy<0),c=0;
-          if((m&1)&&b&&_xo(b[x2])&&!_blocked(x2,y,x3,y3)) {c=!_blocked(x2,y,x4,y+dy);if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
-          x2++;if((m&2)&&b&&_xo(b[x2])&&!_blocked(x2,y,x3,y3)) {c|=!_blocked(x2,y,x4,y+dy);if(!dic[k=_k25(x2,y)]) dic[k]=1,_f2(x2,y);}
+          if((m&1)&&b&&_xo(b[x2])&&!_blocked(x2,y,x3,y3)) {c=!_blocked(x2,y,x4,y+dy);if(!dic[k=_k25(x2,y)]) dic[k]=1,xy.push(x2,y);}
+          x2++;if((m&2)&&b&&_xo(b[x2])&&!_blocked(x2,y,x3,y3)) {c|=!_blocked(x2,y,x4,y+dy);if(!dic[k=_k25(x2,y)]) dic[k]=1,xy.push(x2,y);}
           x=x4,y+=dy,b=board[y];
           if(!c||!b[y]||!_xo(b[x])) break;
-          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
         } else {
           if(!v) x+=dy;
           else {
@@ -4492,7 +4494,7 @@ function _line25(x,y,m,dx,dy,dic,_f2) {
             y+=dy;
           }
           if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
-          if(!dic[k=_k25(x,y)]) dic[k]=1,_f2(x,y);
+          if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
         }
       }
     }
@@ -4500,64 +4502,62 @@ function _line25(x,y,m,dx,dy,dic,_f2) {
 }
 
 function _switch25(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
   var r,cx=(x+1)/2|0,x1=x&1,sx=brd+cx*cell7,sy=brd+y*cell7,v=(cx+y)&1,c2=cell7/2,c4=c2/2,dic={};
-  var i,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch,b=_border15(x,y);
-  if(onoff!=2) _f1(x,y);
+  var i,m,xy=[],b=_border15(x,y);
 
   mask&=0xfffff,mask=(mask<<d)|(mask>>(20-d));
   if(mask&0xf) {
     var x2=x+b[0],y2=y+b[1],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
     if(!_blocked(x,y,x2,y2)) {
-      if(mask&1) _line25(x2,y2,v?x1?2:1:x1?1:2,v?x1?1:-1:0,v?0:x1?1:-1,dic,_f2,x,y);
-      if(mask&2) r=v?x1?1:2:x1?3:0,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
+      if(mask&1) _line25(x2,y2,v?x1?2:1:x1?1:2,v?x1?1:-1:0,v?0:x1?1:-1,dic,xy,x,y);
+      if(mask&2) r=v?x1?1:2:x1?3:0,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
     }
   }
   if(mask&0xf0) {
     var x2=x+b[2],y2=y+b[3],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
     if(!_blocked(x,y,x2,y2)) {
-      if(mask&0x10) _line25(x2,y2,v&&!x1||!v&&!x1?2:1,v?0:x1?1:-1,v?x1?-1:1:0,dic,_f2,x,y);
-      if(mask&0x20) r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
+      if(mask&0x10) _line25(x2,y2,v&&!x1||!v&&!x1?2:1,v?0:x1?1:-1,v?x1?-1:1:0,dic,xy,x,y);
+      if(mask&0x20) r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
     }
   }
   if(mask&0xf00) {
     var x2=x+b[4],y2=y+b[5],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
     if(!_blocked(x,y,x2,y2)) {
-      if(mask&0x100) _line25(x2,y2,!v&&!x1||v&&!x1?2:1,v?0:x1?-1:1,v?x1?1:-1:0,dic,_f2,x,y);
-      if(mask&0x200) r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
+      if(mask&0x100) _line25(x2,y2,!v&&!x1||v&&!x1?2:1,v?0:x1?-1:1,v?x1?1:-1:0,dic,xy,x,y);
+      if(mask&0x200) r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
     }
   }
   if(mask&0xf000) {
     var x2=x+b[6],y2=y+b[7],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
     if(!_blocked(x,y,x2,y2)) {
-      if(mask&0x1000) _line25(x2,y2,v?x1?1:2:x1?2:1,v?x1?1:-1:0,v?0:x1?1:-1,dic,_f2,x,y);
-      if(mask&0x2000) r=v?x1?3:0:x1?2:1,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
+      if(mask&0x1000) _line25(x2,y2,v?x1?1:2:x1?2:1,v?x1?1:-1:0,v?0:x1?1:-1,dic,xy,x,y);
+      if(mask&0x2000) r=v?x1?3:0:x1?2:1,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
     }
   }
   if(mask&0xf0000) {
     var x2=x+b[8],y2=y+b[9],x1=x2&1,v=(((x2+1)>>1)+y2)&1;
     if(!_blocked(x,y,x2,y2)) {
-      if(mask&0x10000) _line25(x2,y2,3,v?x1?-1:1:0,v?0:x1?-1:1,dic,_f2,x,y);
+      if(mask&0x10000) _line25(x2,y2,3,v?x1?-1:1:0,v?0:x1?-1:1,dic,xy,x,y);
       if(mask&0x20000) {
-	 r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
-	 r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,_f2,x,y);
+	 r=v?x1?2:1:x1?0:3,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
+	 r=v?x1?0:3:x1?1:2,_line25(x2,y2,0,r&1?1:-1,r&2?1:-1,dic,xy,x,y);
       }
     }
   }
+  _switchi(x,y,xy,u);
 }
 
 function _switch26(x,y,mask,d,u) {
-  var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var x2,i,j,k,j2,k2,c,b,m,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var x2,i,j,k,j2,k2,c,b,m,xy=[];
 
   mask&=63,mask=(mask<<d)|(mask>>(6-d));
-  if(mask&1) for(i=1,k2=k=x,j2=j=y;_xo(board[j][k-=1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&2)  for(i=1,k2=k=x,j2=j=y;(b=board[j-=1])&&_xo(b[k+=j&1?-1:0])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&4)  for(i=1,k2=k=x,j2=j=y;(b=board[j-=1])&&_xo(b[k+=j&1?0:1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&8) for(i=1,k2=k=x,j2=j=y;_xo(board[j][k+=1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&16)  for(i=1,k2=k=x,j2=j=y;(b=board[j+=1])&&_xo(b[k+=j&1?0:1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
-  if(mask&32)  for(i=1,k2=k=x,j2=j=y;(b=board[j+=1])&&_xo(b[k+=j&1?-1:0])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) _f2(k,j);
+  if(mask&1) for(i=1,k2=k=x,j2=j=y;_xo(board[j][k-=1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  if(mask&2)  for(i=1,k2=k=x,j2=j=y;(b=board[j-=1])&&_xo(b[k+=j&1?-1:0])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  if(mask&4)  for(i=1,k2=k=x,j2=j=y;(b=board[j-=1])&&_xo(b[k+=j&1?0:1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  if(mask&8) for(i=1,k2=k=x,j2=j=y;_xo(board[j][k+=1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  if(mask&16)  for(i=1,k2=k=x,j2=j=y;(b=board[j+=1])&&_xo(b[k+=j&1?0:1])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  if(mask&32)  for(i=1,k2=k=x,j2=j=y;(b=board[j+=1])&&_xo(b[k+=j&1?-1:0])&&!_blocked(k2,j2,k,j);i++,k2=k,j2=j) xy.push(k,j);
+  _switchi(x,y,xy,u);
 }
 
 function _mask(x6,x,y,p3) {
