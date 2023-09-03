@@ -3735,39 +3735,20 @@ function _dcircl2(px,py,mx,my,c,p2,circ) {
   return [ml[0]+1,ml[1]+1];
 }
 
-function _dfill(px,py,c) {
+function _dfill(px,py,c,k) {
   if(py<1||py+1>board.length) return;
   var b=board[py],s=b[px],fifo=[px,py],n=0,x,y,r,m,dx,dy,u,d,a,t,f,nc=c<0?c-1:c;
+  var bf=trap?_border11:delta?_border9:cubes?_border8:tria4?_border5:tria2?_border2:tria?_border3:hexa?_border16:penta?_border15:_border4;
   if(s==c) return;
   board[py][px]=nc;
   while(n<fifo.length) {
     x=x1=fifo[n],y=fifo[n+1],n+=2,b=board[y],m=fifo.length,u=y>1,d=y+1<board.length;
     t=0;
-    if(!trap&&!delta&&!cubes&&!penta&&!tria4) {
-      f=0;if(x>1&&(f=b[x-1])==s) t++,fifo.push(x-1,y);else if(f==nc||f=='f') t++;
-      f=0;if(x+1<b.length&&(f=b[x+1])==s) t++,fifo.push(x+1,y);else if(f==nc||f=='f') t++;
-    }
-    if(trap||delta||cubes||penta||tria4) {
-      var i,d=(trap?_border11:delta?_border9:cubes?_border8:tria4?_border5:_border15)(x,y),l=d.length,x2,y2;
-      for(i=0;i<l;i+=2) {
-        f=0,x2=x+d[i],y2=y+d[i+1];
-        if(y2>1&&y2+1<board.length&&(f=board[y2][x2])==s) t++,fifo.push(x2,y2);
-        else if(f==nc||f=='f') t++;
-      }
-    } else if(tria4) { 
-    } else if(tria||tria2) { 
-      a=((tria2?0^((x+1)>>1):0)^x^y)&1;
-      f=0;if(a&&u&&(f=board[y-1][x])==s) t++,fifo.push(x,y-1);else if(f==nc||f=='f') t++;
-      f=0;if(!a&&d&&(f=board[y+1][x])==s) t++,fifo.push(x,y+1);else if(f==nc||f=='f') t++;
-    } else if(hexa) { 
-      dx=y&1?0:-1;
-      f=0;if(u&&(f=board[y-1][x+dx])==s) t++,fifo.push(x+dx,y-1);else if(f==nc||f=='f') t++;
-      f=0;if(u&&(f=board[y-1][x+1+dx])==s) t++,fifo.push(x+1+dx,y-1);else if(f==nc||f=='f') t++;
-      f=0;if(d&&(f=board[y+1][x+dx])==s) t++,fifo.push(x+dx,y+1);else if(f==nc||f=='f') t++;
-      f=0;if(d&&(f=board[y+1][x+1+dx])==s) t++,fifo.push(x+1+dx,y+1);else if(f==nc||f=='f') t++;
-    } else {
-      f=0;if(u&&(f=board[y-1][x])==s) t++,fifo.push(x,y-1);else if(f==nc||f=='f') t++;
-      f=0;if(d&&(f=board[y+1][x])==s) t++,fifo.push(x,y+1);else if(f==nc||f=='f') t++;
+    var i,d=bf(x,y),l=d.length,x2,y2;
+    for(i=0;i<l;i+=2) {
+      f=0,x2=x+d[i],y2=y+d[i+1];
+      if(y2>0&&y2<board.length&&(f=board[y2][x2])==s&&(k||!_blocked(x,y,x2,y2))) t++,fifo.push(x2,y2);
+      else if(f==nc||f=='f') t++;
     }
     if(c<0&&t==(penta?5:hexa?6:tria||tria2||tria4?3:4)) 
        board[fifo[n-1]][fifo[n-2]]='f';
@@ -3839,7 +3820,7 @@ function _mdesign(dm,up,mu,ev) {
    sele=[];
    var c=up?board[py][px]:-1;
    if(dm==4||dm==5) e=_dcircl2(mp[5],mp[6],mu[5],mu[6],c,dm==5,ev.shiftKey),ex=e[0],ey=e[1];
-   else if(dm==6) _dfill(lx,ly,c);
+   else if(dm==6) _dfill(lx,ly,c,0);
    else if(dm==3) _drect(px,py,lx,ly,c);
    else _dline3(mp[5],mp[6],mu[5],mu[6],c);
    //else _dline(px,py,lx,ly,c);
@@ -3872,8 +3853,26 @@ function _full() {
   var x,y,b;
   for(y=1;y+1<board.length;y++)
     for(x=1,b=board[y];x<b.length;x++)
-      if(b[x]=='x') return false;
-  return true;
+      if(b[x]=='x') return 0;
+  return 1;
+}
+
+function _fullxy(x,y) {
+  if(!_xo(board[y][x])) return 0;
+  var d={},f=[x,y],i=0,x2,y2,k,c,b;
+  d[''+x+':'+y]=1;
+  while(i<f.length) {
+    if(i>64) f.splice(0,i),i=0;
+    x2=f[i++],y2=f[i++];
+    for(j=0;j<4;j++) {
+      x=x2+(j<2?j&1?1:-1:0),y=y2+(j>1?j&1?1:-1:0);
+      if(_blocked(x2,y2,x,y)) continue;
+      c=(b=board[y])&&b[x];
+      if(c=='x') return 0;
+      if((c=='o'||c=='w')&&!d[k=''+x+':'+y]) d[k]=1,f.push(x,y);
+    }
+  }
+  return 1;
 }
 
 function _can(x,y,dx,dy) {
@@ -4749,7 +4748,7 @@ function _mup(e) {
         }
       }
       if(!dy) {
-    	if(_full()) {
+    	if(_full()||_fullxy(px,py)) {
   	  board[py][px]='x';
 	  undo.length=redo;undo[redo++]=u=[px,py,0,0,c,_getpgc(px,py),0];
 	  _drawboard();
@@ -4774,7 +4773,7 @@ function _mup(e) {
 	  if(d2&&(ly>py&&lx>px||lx==px&&ex>0)) l=r=d=u=u2=0;
 	  if(l+r+u+u2+d+d2>1) return;
 	} else if(!s) {
-	  if(_full()) {
+	  if(_full()||_fullxy(px,py)) {
 	    board[py][px]='x';
             undo.length=redo;undo[redo++]=u=[px,py,0,0,c,_getpgc(qx,qy),0];
 	    _drawboard();
