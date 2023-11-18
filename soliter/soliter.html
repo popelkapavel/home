@@ -299,7 +299,7 @@ var cv1=document.getElementById("cv1");
 var ctx=cv1.getContext("2d");
 var grd,mp,mm,mm1,drawms,tdraw,design;
 
-var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,grdm=0,grdx=15,grdy=16;
+var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,grdm=0,grdx=15,grdy=16,edgew=1.5;
 var cell6x=40,cell6y=Math.round(cell6x*Math.sqrt(3)/2);
 var cell8y=60,cell8x=Math.round(cell8y*Math.sqrt(3)/2);
 var onoff=0,shifter=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,delta=0,trap=0,dode=0,white=0,rou=0;
@@ -579,7 +579,14 @@ function transf2(mode) {
             else if(mode==2) cx+=0,d=dd==1?d:1-d,y2=-y;
             else m=cx,y2=m-_div2n(y),cx=-y-_div2p(y2),d=(d+2)%3;
             x2=2*cx+d-1;
-          } else if(cubes||dode) {
+          } else if(dode) {
+            var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
+            y2=y;
+            if(mode==1)  cx=-cx,cx+=1^y&1;
+            else if(mode==2) cx+=0,y2=-y,d=d==1?d:2-d;
+            else m=cx,y2=m-_div2n(y),cx=-y-_div2p(y2),d=(d+1)%3;
+            x2=3*cx+d-2;
+          } else if(cubes) {
             var d=(x+2)%3,cx=(x+2-d)/3,dx=y&1?0:-3;
             y2=y;
             if(mode==1)  cx=-cx,d=d?3-d:d,cx+=1^y&1;
@@ -651,7 +658,12 @@ function transf2(mode) {
         if((tria||tria4)&&(sx&1)) sx++;
         if((penta|tria2)&&(sx&3)) sx+=4-(sx&3);
         if(cubes||dode) {
-          var d=sx%3;if(d) sx+=d>0?3-d:-d;
+          var d=sx%3;
+          if(cubes) {
+            if(d) sx+=d>0?3-d:-d;
+          } else {
+            if(mode==1) { if(d) sx+=d>0?3-d:-d;}
+          }
           if(sy&1) sy++;
         }
         if(trap) {
@@ -924,6 +936,12 @@ function _dub1(x,y,i) {
      r=[b[2*i],b[2*i+1],i2];
      r[0]+=x,r[1]+=y;
      return r;
+  } else if(dode) {
+    var i2=i==1?2:i==2?1:i==3?4:i==4?3:i==5?0:5,b=_border7(x,y);
+    console.log(i,i2);
+    r=[b[2*i],b[2*i+1],i2];
+    r[0]+=x,r[1]+=y;
+    return r;
   } else if(cubes) {
     var i2=i==1?2:i==2?1:i==3?0:3,b=_border8(x,y);
     r=[b[2*i],b[2*i+1],i2];
@@ -948,8 +966,8 @@ function _dublock(x,y,e) {
     if((e&2)&&_xo(board[y-1][x])) r.push(_dub1(x,y,1));
     if((e&4)&&_xo(board[y][x+1])) r.push(_dub1(x,y,2));
     if((e&8)&&_xo(board[y+1][x])) r.push(_dub1(x,y,3));
-  } else if(hexa) {
-    var b=_border16(x,y),x2,y2,i,i2;
+  } else if(hexa||dode) {
+    var b=dode?_border7(x,y):_border16(x,y),x2,y2,i,i2;
     for(i=0,i2=10;i<6;i++,i2=(i2+2)%12)
       if((e&(1<<i))&&_xo(board[y2=y+b[i2+1]][x2=x+b[i2]])) r.push(_dub1(x,y,i));
   } else if(tria||tria2||tria4) {
@@ -1002,6 +1020,9 @@ function _blocked(x,y,x2,y2) {
     return 0!=(e&(1<<i));
   } else if(trap) {
     var xy=_peg(x2,y2),i=_idx(xy[0],xy[1],_points11(x,y));
+    return 0!=(e&(1<<i));
+  } else if(dode) {
+    var xy=_peg(x2,y2),i=_idx(xy[0],xy[1],_points7(x,y));
     return 0!=(e&(1<<i));
   } else if(cubes) {
     var xy=_peg(x2,y2),i=_idx(xy[0],xy[1],_points8(x,y));
@@ -1179,12 +1200,12 @@ function _alloc(w,h) {
   }
 }
 
-function _radial(dx,dy,xy,r) {
+function _radialxy(dx,dy,xy,r) {
   var i,j,k,m=1/0,n=-1/0,x,sx,sy;
   if(grdm==3) {
     for(i=sx=sy=0;i<xy.length;i+=2) sx+=xy[i],sy+=xy[i+1];
     i>>=1,sx/=i,sy/=i;
-    i=trap?4:tria2||tria4?2:0;
+    i=dode?4:trap?4:tria2||tria4?2:0;
     x=_sqr(sx-xy[i],sy-xy[i+1]);
   } else {
     for(i=0;i<xy.length;i+=2) {
@@ -1316,7 +1337,7 @@ function _drawcell(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,Math.sqrt(2)/3); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy,0,x,y);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy,0,x,y);
     else g=_linear(grdx,grdy,xy);
     g.addColorStop(0,'#fff');
     g.addColorStop(1,c);
@@ -1566,7 +1587,7 @@ function _drawcell16(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,Math.sqrt(3)/3); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[6],xy[7]);
     g.addColorStop(0,'#fff');
@@ -1628,7 +1649,7 @@ function _drawcell3x(x,y,xy,c,border) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,tria?Math.sqrt(2)/3:0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1675,7 +1696,7 @@ function _drawcell2x(x,y) {
   var c=_getuco(x,y,ctx.fillStyle=mono==2?clr2[(x+y)&1]:mono==22?clr2[1&((x+1)>>1)]:mono==21?clr2[x&1]:mono==4?clr4[(x&1)+2*(y&1)]:mono==30?clr2[y&1]:mono==31?clr3[(x+2*(y&1))%3]:'#fff');
   if(grdm) {
     var g;
-    if(grdm>1) g=_radial(grdx,grdy,xy);
+    if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1706,7 +1727,7 @@ function _drawcell5(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1752,7 +1773,7 @@ function _drawcell15(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
@@ -1800,7 +1821,7 @@ function _drawcell8(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1847,7 +1868,7 @@ function _drawcell7(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -1897,7 +1918,7 @@ function _drawcell11(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[4],xy[5]);
     g.addColorStop(0,'#fff');
@@ -2005,7 +2026,7 @@ function _drawcell9(x,y) {
         _ground(xy,'#fff',c,0.5,0,0,grdm>5,b,0.125); 
       } else _gpoly(xy,'#fff',c,0.5,0,0,grdm>5);
       return;
-    } else if(grdm>1) g=_radial(grdx,grdy,xy);
+    } else if(grdm>1) g=_radialxy(grdx,grdy,xy);
     else g=_linear(grdx,grdy,xy);
     //else g=ctx.createLinearGradient(xy[0],xy[1],xy[2],xy[3]);
     g.addColorStop(0,'#fff');
@@ -2120,7 +2141,7 @@ function _polyex2(xy,e,dx,dy) {
   var i,n,x,y,a,b;
   if(e!=1) {
     if(!dx&&!dy) dx=dy=0;
-    if(delta||tria2||tria4||trap) {
+    if(delta||tria2||tria4||trap||dode) {
       _polyex3(xy,e==15/16?1:4);
       dx=dy=0;
       return xy;
@@ -2155,9 +2176,15 @@ function _polyex3(xy,e) {
   }
   for(i2=xy.length-2,i=0;i<xy.length;i2=i,i+=2) {
     dx=va[i],dy=va[i+1];
-    d=Math.sqrt(_sqr(dx,dy));
-    dx/=d,dy/=d;
-    d=(delta?1:1)/(-da[i+1]*dx+da[i]*dy);
+    d=_sqr(dx,dy);
+    if(d>0.5) {
+      d=Math.sqrt(d);
+      dx/=d,dy/=d;
+      d=(delta?1:1)/(-da[i+1]*dx+da[i]*dy);
+    } else {
+      dx=-da[i+1],dy=da[i];
+      d=Math.sqrt(_sqr(dx,dy));
+    }
     xy[i]+=e*dx*d,xy[i+1]+=e*dy*d;
   }
 }
@@ -2532,6 +2559,7 @@ function _drawborder(x,y) {
     if(!_xo(board[y+1][x])) _line(sx,sy+cell,sx+cell,sy+cell);
   }
   if(e) {
+    ctx.lineWidth=edgew;
     if(e&1) _line(sx+1,sy,sx+1,sy+cell);
     if(e&2) _line(sx,sy,sx+cell,sy);
     if(e&4) _line(sx+cell-1,sy,sx+cell-1,sy+cell);
@@ -2560,7 +2588,7 @@ function _drawborder16(x,y) {
   } else for(i=0,i2=10;i<12;i2=i,i+=2)
     if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    xy.splice(12,4);
+    xy.splice(12);
     var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(i=0,i2=10;i<6;i++,i2=(i2+2)%12) if(e&(1<<i)) {
@@ -2603,13 +2631,16 @@ function _drawborder3x(x,y,points,border) {
     for(i=0,i2=4;i<6;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(6);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=4;i<3;i++,i2=(i2+2)%6) if(e&(1<<i)) {
       i3=(i2+2)%6;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2623,13 +2654,16 @@ function _drawborder2x(x,y) {
   if(!_xo(board[y][x+1])) p1=xx==0?2:xx==1?4:xx==2?2:0,p2=(p1+2)%6,_line(xy[p1],xy[p1+1],xy[p2],xy[p2+1]);
   if(!_xo(board[y-dy][x])) p1=xx==2?4:xx==3?4:0,p2=(p1+2)%6,_line(xy[p1],xy[p1+1],xy[p2],xy[p2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(6);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=4;i<3;i++,i2=(i2+2)%6) if(e&(1<<i)) {
       i3=(i2+2)%6;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2650,13 +2684,16 @@ function _drawborder5(x,y) {
     for(i=0,i2=4;i<6;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(6);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=4;i<3;i++,i2=(i2+2)%6) if(e&(1<<i)) {
       i3=(i2+2)%6;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2677,13 +2714,16 @@ function _drawborder15(x,y) {
     for(i=0,i2=8;i<10;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(10);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=8;i<5;i++,i2=(i2+2)%10) if(e&(1<<i)) {
       i3=(i2+2)%10;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2704,13 +2744,16 @@ function _drawborder8(x,y) {
     for(i=0,i2=6;i<8;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(8);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=6;i<4;i++,i2=(i2+2)%8) if(e&(1<<i)) {
       i3=(i2+2)%8;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2731,13 +2774,16 @@ function _drawborder7(x,y) {
     for(i=0,i2=10;i<12;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(12);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
-    for(i=0,i2=10;i<4;i++,i2=(i2+2)%12) if(e&(1<<i)) {
+    ctx.lineWidth=edgew;
+    for(i=0,i2=10;i<6;i++,i2=(i2+2)%12) if(e&(1<<i)) {
       i3=(i2+2)%12;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2759,13 +2805,16 @@ function _drawborder9(x,y) {
     for(i=0,i2=6;i<8;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    var i,i2,i3;
+    xy.splice(8);
+    var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=6;i<4;i++,i2=(i2+2)%8) if(e&(1<<i)) {
       i3=(i2+2)%8;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
-      _circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
+      //_circle2(1,xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
     }
+    _borderedge(e,xy2);
   }
 }
 
@@ -2786,9 +2835,10 @@ function _drawborder11(x,y) {
     for(i=0,i2=6;i<8;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
   if(e) {
-    xy.splice(8,4);
+    xy.splice(8);
     var i,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
+    ctx.lineWidth=edgew;
     for(i=0,i2=6;i<4;i++,i2=(i2+2)%8) if(e&(1<<i)) {
       i3=(i2+2)%8;
       _line(xy[i2],xy[i2+1],xy[i3],xy[i3+1]);
@@ -3027,7 +3077,7 @@ function _svgborder(x,y,rr) {
       if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_svgline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
     }
   if(e) {
-    xy.splice(n,4);
+    xy.splice(n);
     var i,m,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(m=1,i=0,i2=b.length-2;i<xy.length;i2=i,i+=2,m<<=1) 
@@ -3237,7 +3287,7 @@ function _pdf_linear(c,dx,dy,xy) {
 }
 
 function _pdf_radial(c,dx,dy,xy,c2) {
-  var n,s,fn=_pdf_fx(c2?c2:'#fff',c?c:'#fff'),g=xy.length==3?xy:_radial(grdx,grdy,xy,1);
+  var n,s,fn=_pdf_fx(c2?c2:'#fff',c?c:'#fff'),g=xy.length==3?xy:_radialxy(grdx,grdy,xy,1);
   s='<< /ShadingType 3 /ColorSpace /DeviceRGB /Coords ['+_pdfx(g[0])+' '+_pdfy(g[1])+' 0 '+_pdfx(g[0])+' '+_pdfy(g[1])+' '+_pdfx(g[2])+'] /Domain [0 1] /Extend [true true] /Function '+fn+' 0 R >>';
   pdfo.push(s);
   pdfd['$'+(n=pdfo.length)]=n;
@@ -3290,7 +3340,7 @@ function _pdfborder(x,y,rr) {
       if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_pdfline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
     }
   if(e) {
-    xy.splice(n,4);
+    xy.splice(n);
     var i,m,i2,i3,xy2=xy.slice();
     _polyex2(xy,15/16,0,0);
     for(m=1,i=0,i2=b.length-2;i<xy.length;i2=i,i+=2,m<<=1) 
@@ -3554,7 +3604,7 @@ function _border2(x,y) {
 
 function _shiftxy(px,py,b,opt) {
   var xy=[],x,y,p,nx,ny,n,pi,f;
-  f=penta&&opt?b^4:tria4||penta?(((b+4)^1)&7):quad||tria2?(b=b&3,b^2):(b%=6,(b+3)%6);
+  f=dode?((b^1)+6)%12:penta&&opt?b^4:tria4||penta?(((b+4)^1)&7):quad||tria2?(b=b&3,b^2):(b%=6,(b+3)%6);
   for(x=px,y=py;(n=_next(x,y,b,opt),_xo(board[ny=n[1]][nx=n[0]]))&&!_blocked(x,y,nx,ny);x=nx,y=ny)
     xy.push(ny,nx);
   xy.reverse(),pi=xy.length,xy.push(px,py);
@@ -3566,22 +3616,32 @@ function _shiftxy(px,py,b,opt) {
 
 function _next(x,y,d,opt) {
   if(dode) {
-    var e=(x+2)%3,bx=y&1?0:-3,x2;
+    var e=(x+2)%3,bx=y&1?0:-3,x2,r=d&1,d2=d>>1;
+    console.log(d,d2,r,opt);
     if(opt) {
-      if(d==0) x+=e==0?1:e==1?-2:-2;
-      else if(d==1) x+=e==0?bx+2:e==1?-1:-1,y+=e==0?-1:0;
-      else if(d==2) x+=e==0?bx+4:e==1?1:-2,y+=e==0?-1:0;
-      else if(d==3) x+=e==0?2:e==1?-1:2;
-      else if(d==4) x+=e==0?1:e==1?1:bx+1,y+=e==2?1:0;
-      else if(d==5) x+=e==0?2:e==1?bx-1:-1,y+=e==1?1:0;
+      if(d2==0) x+=(r?[-2,1,-2]:[2,-1,-4])[e];
+      else if(d2==1) x+=(r?[bx+1,1,-2]:[bx+2,-1,-1])[e],y+=e==0?-1:e==1?0:0;
+      else if(d2==2) x+=(r?[1,bx+4,-2]:[bx+5,-1,-1])[e],y+=e==(r?1:0)?-1:0;
+      else if(d2==3) x+=(r?[1,4,-2]:[2,2,-1])[e];
+      else if(d2==4) x+=(r?[1,1,bx+1]:[2,bx+2,-1])[e],y+=e==(r?2:1)?1:0;
+      else if(d2==5) x+=(r?[1,1,bx-2]:[2,-1,bx-1])[e],y+=e==2?1:0;
     } else {
-      if(d==0) x+=e==0?-3:e==1?-2:-1;
-      else if(d==1) x+=e==0?bx+2:e==1?bx:-2,y+=e==0?-1:e==1?-1:0;
-      else if(d==2) x+=e==0?bx+4:e==1?-1:bx+3,y+=e==0?-1:e==1?0:-1;
-      else if(d==3) x+=e==0?3:e==1?1:2;
-      else if(d==4) x+=e==0?2:e==1?bx+3:bx+1,y+=e==0?0:e==1?1:1;
-      else if(d==5) x+=e==0?1:e==1?bx-1:bx,y+=e==0?0:e==1?1:1;
+      if(d2==0) x+=e==0?-2:e==1?r?-1:1:-4;
+      else if(d2==1) x+=e==0?bx+(r?1:2):e==1?-1:-2,y+=e==0?-1:e==1?0:0;
+      else if(d2==2) x+=e==0?bx+5:e==1?bx+4:r?-1:-2,y+=e==0?-1:e==1?-1:0;
+      else if(d2==3) x+=e==0?1:e==1?r?4:2:-1;
+      else if(d2==4) x+=e==0?r?2:1:e==1?bx+2:bx+1,y+=e==0?0:e==1?1:1;
+      else if(d2==5) x+=e==0?2:e==1?1:bx+(r?-2:-1),y+=e==0?0:e==1?0:1;
     }
+
+/*    d=(x+2)%3,bx=y&1?0:-3;
+    if(dx==1) aa=[[bx+(r?1:2),-1],[-1,0],[-2,0]][d];
+    else if(dx==2) aa=[[bx+5,-1],[bx+4,-1],[r?-1:-2,0]][d];
+    else if(dx==3) aa=[[1,0],[r?4:2,0],[-1,0]][d];
+    else if(dx==4) aa=[[r?2:1,0],[bx+2,1],[bx+1,1]][d];
+    else if(dx==5) aa=[[2,0],[1,0],[bx+(r?-2:-1),1]][d];
+    else aa=[[-2,0],[r?-1:1,0],[-4,0]][d];*/
+
   } else if(cubes) {
     var e=(x+2)%3,bx=y&1?0:-3,x2;
     if(opt) {
@@ -3666,11 +3726,13 @@ function _next(x,y,d,opt) {
 function _shiftb(px,py,ex,ey) {
   var b;
   if(dode) {
-    var e=(px+2)%3;//,bx=y&1?0:-3;
-    b=_idx(ex,ey,_points(px,py));
-    if(e==0) b=b==0?5:b==3?4:b;
-    else if(e==1) b=b==0?3:b==1?5:b==2?0:2;
-    else if(e==2) b=b==0?1:b==1?3:b==2?4:0;
+    var e=(px+2)%3,b2,p;//,bx=y&1?0:-3;
+    b=_idx(ex,ey,p=_points(px,py));
+    if(b==3||b==4) b2=_idx(ex,ey,p,1),b+=b2==3?3:0;
+    console.log(px,py,ex,ey,'b='+b,b2);
+    if(e==0) b=[2,3,4,6,11,1,8,9][b];//b==0?2:b==1?3:b==2?4:b==3?6:b==4?11:1;
+    else if(e==1) b=[6,7,8,10,3,5,0,1][b];//b==0?3:b==1?5:b==2?0:2;
+    else if(e==2) b=[10,11,0,2,7,9,4,5][b];//b==0?1:b==1?3:b==2?4:0;
   } else if(cubes) {
     var e=(px+2)%3;//,bx=y&1?0:-3;
     b=_idx(ex,ey,_points(px,py));
@@ -3898,7 +3960,7 @@ function _dfill(px,py,c,k) {
       if(y2>0&&y2<board.length&&(f=board[y2][x2])==s&&(k||!_blocked(x,y,x2,y2))) t++,fifo.push(x2,y2);
       else if(f==nc||f=='f') t++;
     }
-    if(c<0&&t==(penta?5:hexa?6:tria||tria2||tria4?3:4)) 
+    if(c<0&&t==(penta?5:hexa||dode?6:tria||tria2||tria4?3:4)) 
        board[fifo[n-1]][fifo[n-2]]='f';
     for(;m<fifo.length;m+=2)
       board[fifo[m+1]][fifo[m]]=nc;
@@ -4319,10 +4381,10 @@ function _switch16(x,y,mask,d,u) {
   return _switchi(x,y,xy,u);
 }*/
 
-function _switch8(x,y,mask,d,u) {
-  var i,m,b=_border8(x,y);
-  for(i=2*d,m=1;m<16;i+=i==6?-6:2,m<<=1) 
-   if(mask&m) xy.push(x+b[i],y+b[i+1]);
+function _switch7(x,y,mask,d,u) {
+  var i,m,xy=[],b=_border7(x,y);
+  for(i=2*d,m=1;m<64;i+=i==10?-10:2,m<<=1) 
+   if(mask&m) if(!_blocked(x,y,x2=x+b[i],y2=y+b[i+1])) xy.push(x2,y2);
   return _switchi(x,y,xy,u);
 }
 
@@ -4632,6 +4694,40 @@ function _line28(x,y,m,dx,dy,dic,xy) {
   }
 }
 
+function _switch20(x,y,mask,d,u) {
+  var r=(x+2)%3,cx=(x+2-d)/3,dic={},lm=0;
+  var i,m2,m,xy=[];
+
+  console.clear();console.log('switch',x,y,d,mask);
+  mask&=0xffff,mask=(mask<<d)|(mask>>(6-d));
+  if(mask&(1)) _line20(x,y,lm,0,0,dic,xy)
+  if(mask&(2)) _line20(x,y,lm,1,0,dic,xy)
+  if(mask&(4)) _line20(x,y,lm,2,0,dic,xy)
+  if(mask&(8)) _line20(x,y,lm,3,0,dic,xy)
+  if(mask&(16)) _line20(x,y,lm,4,0,dic,xy)
+  if(mask&(32)) _line20(x,y,lm,5,0,dic,xy)
+  return _switchi(x,y,xy,u);
+}
+
+function _line20(x,y,m,dx,dy,dic,xy) {
+  var n=88,x3,y3,d,dd,cx,aa,bx,r=m&2;
+  console.log('line',x,y,dx,dy);
+  for(;n--;) {
+    x3=x,y3=y;
+    d=(x+2)%3,bx=y&1?0:-3;
+    if(dx==1) aa=[[bx+(r?1:2),-1],[-1,0],[-2,0]][d];
+    else if(dx==2) aa=[[bx+5,-1],[bx+4,-1],[r?-1:-2,0]][d];
+    else if(dx==3) aa=[[1,0],[r?4:2,0],[-1,0]][d];
+    else if(dx==4) aa=[[r?2:1,0],[bx+2,1],[bx+1,1]][d];
+    else if(dx==5) aa=[[2,0],[1,0],[bx+(r?-2:-1),1]][d];
+    else aa=[[-2,0],[r?-1:1,0],[-4,0]][d];
+    x+=aa[0],y+=aa[1];
+    if(!(b=board[y])||!_xo(b[x])||_blocked(x,y,x3,y3)) break;
+    if(!dic[k=_k25(x,y)]) dic[k]=1,xy.push(x,y);
+  }
+}
+
+
 function _switch28(x,y,mask,d,u) {
   var r=(x+2)%3,dic={};
   var i,m2,m,xy=[];
@@ -4835,7 +4931,7 @@ function _switch26(x,y,mask,d,u) {
 }
 
 function _mask(x6,x,y,p3) {
-  if(hexa) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
+  if(hexa||dode) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
   if(trap) {
     if(onoffx) return 1;
     return x6==2?15:x6==1?2:1;
@@ -4846,7 +4942,7 @@ function _mask(x6,x,y,p3) {
     m=x6==3?0x1:x6==2?3:x6==1?0x1111:0xf;
     return m;
   }
-  if(dode||cubes) {
+  if(cubes) {
     var d=(x+2)%3,b=(p3==4||p3==12),m;
     if(onoffx) return 1;
     m=x6==6?23:x6==4?8:x6==3?0x3333:x6==2?0x55:x6==1?0x1111:65535;
@@ -4898,7 +4994,7 @@ function _mup(e) {
       if(onoffx) {
         hexa?(p=26,_switch26(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
         :trap?(p=21,_switch21(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points11(lx,ly),x6==6)))
-        :dode?(p=17,_switch17(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points7(lx,ly),x6==6)))
+        :dode?(p=20,_switch20(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points7(lx,ly),x6==6)))
         :cubes?(p=28,_switch28(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points8(lx,ly),x6==6)))
         :delta?(p=29,_switch29(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points9(lx,ly),x6==6)))
         :tria4?(p=22,_switch22(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points5(lx,ly),x6==6)))
@@ -4913,7 +5009,7 @@ function _mup(e) {
       } else 
         trap?(p=11,p3=_idx(mxy[5],mxy[6],_points11(lx,ly),x6>=6),xyc=_switch11(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
         :delta?(p=19,p3=4*_idx(mxy[5],mxy[6],_points9(lx,ly),x6>=6),xyc=_switch19(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
-        :dode?(p=7,p3=4*_idx(mxy[5],mxy[6],_points7(lx,ly),x6>=6),xyc=_switch7(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
+        :dode?(p=7,p3=_idx(mxy[5],mxy[6],_points7(lx,ly),x6>=6),xyc=_switch7(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
         :cubes?(p=18,p3=4*_idx(mxy[5],mxy[6],_points8(lx,ly),x6>=6),xyc=_switch18(lx,ly,p2=_mask(x6,lx,ly,p3),p3))
         :penta?(p=15,xyc=_switch15(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points15(lx,ly),x6>=6)))
         :hexa?(p=16,xyc=_switch16(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
@@ -5076,7 +5172,7 @@ function _mup(e) {
 function _switchx(x) {
   return x==2?_switch2:x==4?_switch4:x==5?_switch5
    :x==11?_switch11:x==15?_switch15:x==16?_switch16:x==18?_switch18:x==19?_switch19
-   :x==21?_switch21:x==22?_switch22:x==23?_switch23:x==24?_switch24:x==25?_switch25:x==26?_switch26:x==27?_switch27:x==28?_switch28:x==29?_switch29
+   :x==21?_switch21:x==22?_switch22:x==23?_switch23:x==24?_switch24:x==25?_switch25:x==26?_switch26:x==27?_switch27:x==28?_switch28:x==29?_switch29:x==20?_switch20
    :_switch14;
 }
 function _undo(n) {
@@ -5089,17 +5185,6 @@ function _undo(n) {
         _shift(xy,-dy);
       } else if(u.length==6) {
         _switchx(u[2])(px,py,u[3],u[4],u[5]);
-/*        u[2]==26?_switch26(px,py,u[3],u[4],1)
-        :u[2]==29?_switch29(px,py,u[3],u[4],1)
-        :u[2]==28?_switch28(px,py,u[3],u[4],1)
-        :u[2]==22?_switch22(px,py,u[3],u[4],1)
-        :u[2]==27?_switch27(px,py,u[3],u[4],1)
-        :u[2]==25?_switch25(px,py,u[3],u[4],1)
-        :u[2]==24?_switch24(px,py,u[3],u[4],1)
-        :u[2]==19?_switch19(px,py,u[3],u[4],1):u[2]==18?_switch18(px,py,u[3],u[4],1)
-        :u[2]==15?_switch15(px,py,u[3],u[4],1):u[2]==16?_switch16(px,py,u[3],u[4],1)
-        :u[2]==5?_switch5(px,py,1):u[2]==2?_switch2(px,py,1):u[2]==4?_switch4(px,py,1)
-        :_switch14(px,py,u[3],u[4],1);*/
       } else if(dx||dy) {
 	var qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
 	board[py][px]=u[4],board[qy][qx]=u[5],board[ry][rx]='x';
@@ -5122,17 +5207,6 @@ function _redo(n) {
       _shift(xy,dy);
     } else if(u.length==6) 
       u[5]=_switchx(u[2])(px,py,u[3],u[4]);
-/*       u[2]==26?_switch26(px,py,u[3],u[4])
-       :u[2]==29?_switch29(px,py,u[3],u[4])
-       :u[2]==28?_switch28(px,py,u[3],u[4])
-       :u[2]==22?_switch22(px,py,u[3],u[4])
-       :u[2]==27?_switch27(px,py,u[3],u[4])
-       :u[2]==25?_switch25(px,py,u[3],u[4])
-       :u[2]==24?_switch24(px,py,u[3],u[4])
-       :u[2]==19?_switch19(px,py,u[3],u[4]):u[2]==18?_switch18(px,py,u[3],u[4])
-       :u[2]==15?_switch15(px,py,u[3],u[4]):u[2]==16?_switch16(px,py,u[3],u[4])
-       :u[2]==5?_switch5(px,py):u[2]==2?_switch2(px,py):u[2]==4?_switch4(px,py)
-       :_switch14(px,py,u[3],u[4]);*/
     else if(dx||dy) {
       var qr=_jumps(px,py,dx,dy),qx=qr[0],qy=qr[1],rx=qr[2],ry=qr[3];
       board[py][px]=board[qy][qx]='x',board[ry][rx]=u[4];
