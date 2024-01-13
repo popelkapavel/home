@@ -130,6 +130,7 @@ moves:<span style="font-size:18px;font-weight:bold;" id=moves>0</span><input sty
 |
 <input name=peg type=checkbox onclick=_drawboard() title="polygon peg"/>
 <input name=rou type=checkbox onclick="window.rou=+f.rou.checked;_drawboard()" title="rounded cell"/>
+<input name=corn type=checkbox onclick=cornchg(1,this,event) title="corner mark" />
 |
 <input name=mono type=radio checked value=1 />
 <svg width=20 height=20 style=vertical-align:middle onclick=_setclr(0) >
@@ -318,7 +319,7 @@ cv1.onmousemove=_mmove;
 cv1.onmouseup=_mup;
 window.onkeyup=_kup;
 var i,hxa=click('hexa',hexachg),dxa=click('des',deschg),mxa=click('mono',monochg),depth=0,game={},ugame={};
-grdchg();monochg();hexachg();onoffchg();deschg();whitechg(1);
+grdchg();monochg();hexachg();onoffchg();deschg();whitechg(1);cornchg();
 draw(1);
 game['stan']='//@Standard,quad,sol\n\
   OOO  \n\
@@ -722,6 +723,12 @@ function grdchg(i,t,e,x) {
   }
   if(e) _drawboard();
 }
+function cornchg(i,t,e) {
+  if(i) corn=(corn+1)%3;
+  f.corn.checked=!!corn;
+  if(e) _drawboard();
+}
+
 function onoffchg(dr,m,src,e) { 
   var x=+f.onoff.value;
   if(m) x=1,f.onoff[2].checked=true;
@@ -2535,19 +2542,21 @@ function _borderedge(e,xy2) {
 }
 
 function _corn(m,e,n,xy2,b) {
-  var a,c,i,i2,n2=n>>1,x3,y3,x2=xy2[n-4],y2=xy2[n-3],x=xy2[n-2],y=xy2[n-1];
+  var a,c,i,i2,n2=n>>1,x3,y3,x2=xy2[n-4],y2=xy2[n-3],x=xy2[n-2],y=xy2[n-1],dx,dy,ex,ey;
   for(i=0,i2=n2-2;i<xy2.length;i+=2,i2=(i2+1)%n2) {
     x3=x2,y3=y2,x2=x,y2=y,x=xy2[i],y=xy2[i+1];
     if(b&&!b[i2]&&!b[(i2+1)%n2]) continue;
-    if(m==1) {
-      a=Math.atan2(y3-y2,x3-x2),c=Math.atan2(y-y2,x-x2);
+    dx=x-x2,dy=y-y2,ex=x3-x2,ey=y3-y2;
+    if(Math.abs(dx*ey-dy*ex)<1) continue;
+    if(m==2) {
+      a=Math.atan2(ey,ex),c=Math.atan2(dy,dx);
       ctx.beginPath();
       ctx.moveTo(x2,y2);
       ctx.arc(x2,y2,e,c,a);
       ctx.fill();
     } else {
-      a=Math.sqrt(_sqr(x3-x2,y3-y2));
-      c=Math.sqrt(_sqr(x-x2,y-y2));
+      a=Math.sqrt(_sqr(ex,ey));
+      c=Math.sqrt(_sqr(dx,dy));
       ctx.beginPath();
       ctx.moveTo(x2,y2);
       ctx.lineTo(x2+e*(x3-x2)/a,y2+e*(y3-y2)/a);
@@ -2804,7 +2813,7 @@ function _drawborder7(x,y) {
   } else
     for(i=0,i2=10;i<12;i2=i,i+=2)
       if(!_xo(board[y+b[i+1]][x+b[i]])) _line(xy[i],xy[i+1],xy[i2],xy[i2+1]);
-  if(corn) _corn(corn,3,10,xy,o);
+  if(corn) _corn(corn,3,12,xy,o);
   if(e) {
     xy.splice(12);
     var i,i2,i3,xy2=xy.slice();
@@ -2969,8 +2978,11 @@ function _svggpoly(px,py,w,c,xy,b,m) {
 }
 
 function _svg_arc(w,x,y,x2,y2,r) { 
-  var r1=1-r;
   return '<path d="M'+x+','+y+' A'+r+','+r+' 0 0 1 '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
+}
+
+function _svg_arcf(x,y,x2,y2,r,sx,sy) { 
+  return '<path d="M'+sx+','+sy+' L'+x+','+y+' A'+r+','+r+' 0 0 0 '+x2+','+y2+' Z" style="fill:#000;stroke:none;" />\r\n';
 }
 
 function _svg_arc2(c,x,y,x1,y1,x2,y2,r) { 
@@ -3089,10 +3101,29 @@ function _svgcell(x,y,rr) {
   return s;
 }
 
+function _svgcorn(m,e,n,xy2,b) {
+  var s,a,c,i,i2,n2=n>>1,x3,y3,x2=xy2[n-4],y2=xy2[n-3],x=xy2[n-2],y=xy2[n-1],dx,dy,ex,ey,p,fx,fy,gx,gy;
+  for(i=0,i2=n2-2;i<xy2.length;i+=2,i2=(i2+1)%n2) {
+    x3=x2,y3=y2,x2=x,y2=y,x=xy2[i],y=xy2[i+1];
+    if(b&&!b[i2]&&!b[(i2+1)%n2]) continue;
+    dx=x-x2,dy=y-y2,ex=x3-x2,ey=y3-y2;
+    if(Math.abs(dx*ey-dy*ex)<1) continue;
+    a=Math.sqrt(_sqr(ex,ey));
+    c=Math.sqrt(_sqr(dx,dy));
+    fx=x2+e*(x3-x2)/a,fy=y2+e*(y3-y2)/a,gx=x2+e*(x-x2)/c,gy=y2+e*(y-y2)/c;
+    if(m==2) {
+      s+=_svg_arcf(fx,fy,gx,gy,e,x2,y2);
+    } else {
+      s+=_svgpoly(0,'#000',[x2,y2,fx,fy,gx,gy]);
+    }
+  }
+  return s;
+}
+
 function _svgborder(x,y,rr) {
-  var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y),n=xy.length;
+  var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y),n=xy.length,o;
   if(rou) {
-    var i1,a,o=[];
+    var i1,a;o=[];
     for(i1=i=0;i<xy.length;i1++,i+=2) o[i1]=_brd(x+b[i],y+b[i+1]);
     o.push(o[0]);o.shift();
     o.push(o[0]);
@@ -3110,6 +3141,7 @@ function _svgborder(x,y,rr) {
     for(i=0,i2=b.length-2;i<xy.length;i2=i,i+=2) {
       if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_svgline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
     }
+  if(corn) s+=_svgcorn(corn,3,n,xy,o);
   if(e) {
     xy.splice(n);
     var i,m,i2,i3,xy2=xy.slice();
@@ -3220,6 +3252,12 @@ function _pdf_arc2(c,x,y,x1,y1,x2,y2,z) {
   }
 }
 
+function _pdf_arcf(x1,y1,x2,y2,z,sx,sy) { 
+  var mx=(x1+x2)/2,my=(y1+y2)/2,dx=mx-sx,dy=my-sy,d2=_sqr(dx,dy),k=_sqr(x1-mx,y1-my)/d2,ex=mx+k*dx,ey=my+k*dy;
+  var r2=Math.sqrt(_sqr(x1-sx,y1-sy)),d3=Math.sqrt(d2),dd=r2-d3,r=1-4/3*dd/(k*d3),r1=1-r;
+  return ' 0 0 0 rg 0 w '+_pdfm(sx,sy)+' '+_pdfl(x1,y1)+' '+_pdfc(r1*ex+r*x1,r1*ey+r*y1,r1*ex+r*x2,r1*ey+r*y2,x2,y2)+' b';
+}
+
 function _pdf_bez(w,x,y,x1,y1,x2,y2,r) { 
   var r1=1-r;
   //return '<path d="M'+x+','+y+' C'+(r1*x1+r*x)+','+(r1*y1+r*y)+' '+(r1*x1+r*x2)+','+(r1*y1+r*y2)+' '+x2+','+y2+'" style="fill:none;stroke:#000;stroke-width:'+w+';" />\r\n';
@@ -3238,7 +3276,7 @@ function _pdfpoly(w,c,xy,sh) {
   var s='',i;
   for(i=0;i<xy.length;i+=2)
     s+=' '+_pdfx(xy[i])+' '+_pdfy(xy[i+1])+(s==''?' m':' l');
-  return s=' '+(w>0?''+w+' w ':'')+(c?_pdf_color(c)+' rg':'')+s+' '+(sh?sh<0?'s':'q W '+(w>0?'s':'n')+' /Sh'+sh+' sh Q ':'b');
+  return s=' '+(w>0?''+w+' w ':'')+(c?_pdf_color(c)+' rg':'')+s+' '+(sh?sh<0?'s':'q W '+(w>0?'s':'n')+' /Sh'+sh+' sh Q ':(w>0?'b':'f'));
 }
 
 function _pdf_pathx(r) { 
@@ -3352,6 +3390,25 @@ function _pdfcell(x,y,rr,b) {
   return s;
 }
 
+function _pdfcorn(m,e,n,xy2,b) {
+  var s,a,c,i,i2,n2=n>>1,x3,y3,x2=xy2[n-4],y2=xy2[n-3],x=xy2[n-2],y=xy2[n-1],dx,dy,ex,ey,p,fx,fy,gx,gy;
+  for(i=0,i2=n2-2;i<xy2.length;i+=2,i2=(i2+1)%n2) {
+    x3=x2,y3=y2,x2=x,y2=y,x=xy2[i],y=xy2[i+1];
+    if(b&&!b[i2]&&!b[(i2+1)%n2]) continue;
+    dx=x-x2,dy=y-y2,ex=x3-x2,ey=y3-y2;
+    if(Math.abs(dx*ey-dy*ex)<1) continue;
+    a=Math.sqrt(_sqr(ex,ey));
+    c=Math.sqrt(_sqr(dx,dy));
+    fx=x2+e*(x3-x2)/a,fy=y2+e*(y3-y2)/a,gx=x2+e*(x-x2)/c,gy=y2+e*(y-y2)/c;
+    if(m==2) {
+      s+=_pdf_arcf(fx,fy,gx,gy,e,x2,y2);
+    } else {
+      s+=_pdfpoly(0,'#000',[x2,y2,fx,fy,gx,gy]);
+    }
+  }
+  return s;
+}
+
 function _pdfborder(x,y,rr) {
   var s='',i,xy=_points(x,y),b2,b=_border(x,y),e=_getblock(x,y),n=xy.length;
   if(rou) {
@@ -3373,6 +3430,7 @@ function _pdfborder(x,y,rr) {
     for(i=0,i2=b.length-2;i<xy.length;i2=i,i+=2) {
       if((b2=board[y+b[i+1]])&&!_xo(b2[x+b[i]])) s+=_pdfline(2,xy[i],xy[i+1],xy[i2],xy[i2+1]);
     }
+  if(corn) s+=_pdfcorn(corn,3,n,xy,o);
   if(e) {
     xy.splice(n);
     var i,m,i2,i3,xy2=xy.slice();
