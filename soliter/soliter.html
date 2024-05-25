@@ -31,13 +31,8 @@
 </td><td>
 <input name=onoff type=radio value=0 checked onclick=onoffchg(1,0,this,event) style="margin:0px;" title="soliter" />
 <input name=onoff type=radio value=2 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="shifter" />
+<input name=onoff type=radio value=3 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="faller" />
 <input name=onoff type=radio value=1 onclick=onoffchg(1,0,this,event) style="margin:0px;" title="on&amp;off" />
-<select style=margin-bottom:2px; name=onoff2 onchange=onoffchg(1,1) title="on&amp;off type">
-<option value=1 >on&amp;off</option>
-<option value=2 >on&amp;off o</option>
-<option value=3 >on&amp;off 3</option>
-<option value=4 >on&amp;off x</option>
-</select>
 <input name=diag type=checkbox onclick=onoffchg(0,0,this,event) title="enable diagonal" />X
 <select style=margin-bottom:2px; name=onoff6 title="on&amp;off hexa and penta mode">
 <option value=0 >*</option>
@@ -50,7 +45,10 @@
 <option value=8 >S</option>
 <option value=9 >]</option>
 </select>
-<input name=onoffx type=checkbox onclick=onoffchg(0,0,this,event) title="onoff extent" />&#x2191
+<input name=ooo type=checkbox onclick=onoffchg(0,0,this,event) title="onoff around" />O
+<input name=oo3 type=checkbox onclick=onoffchg(0,0,this,event) title="onoff 3 state" />3
+<input name=ooc type=checkbox onclick=onoffchg(0,0,this,event) title="onoff 3 cross" />C
+<input name=oox type=checkbox onclick=onoffchg(0,0,this,event) title="onoff extent" />&#x2191
 |
 <input class=h name=hexa type=radio checked value=4 title=squares />
 <svg id=hexa0 width=20 height=20 style=vertical-align:middle onclick=_sethex(0) >
@@ -303,7 +301,8 @@ var grd,mp,mm,mm1,drawms,tdraw,design;
 var cell=32,cell2=36,cell5=48,cell7=48,brd=-8,mono=f.mono.value,grdm=0,grdx=15,grdy=16,edgew=1.5;
 var cell6x=40,cell6y=Math.round(cell6x*Math.sqrt(3)/2);
 var cell8y=60,cell8x=Math.round(cell8y*Math.sqrt(3)/2);
-var onoff=0,shifter=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,delta=0,trap=0,deca=0,white=0,rou=0,corn=2;
+var onoff=0,oox,ooo,ooc,oo3;
+var faller=0,shifter=0,diag=0,quad=0,hexa=0,tria=0,tria2=0,tria4=0,penta=0,cubes=0,delta=0,trap=0,deca=0,white=0,rou=0,corn=2;
 var cell3x=48,cell3y=Math.round(cell3x*Math.sqrt(3)/2);
 var cell9x=64,cell9y=Math.round(cell9x*Math.sqrt(3)/2);
 var clr2=['#feb','#db9','#a86'],clr3=['#bbf','#fbb','#ffb'],clr4=['#ffc','#c88','#88c','#cff'];
@@ -730,13 +729,19 @@ function cornchg(i,t,e) {
 }
 
 function onoffchg(dr,m,src,e) { 
+  if(src&&src.checked&&/oo/.test(src.name)&&!f.onoff[2].checked)
+    f.onoff[2].checked=true;
   var x=+f.onoff.value;
   if(m) x=1,f.onoff[2].checked=true;
-  onoff=x==1?+f.onoff2.value:0;
+  onoff=x==1;
   shifter=x==2;
+  faller=x==3;
   diag=+f.diag.checked;
   if(src&&src.name=='diag') diag=diag?e.ctrlKey?2:1:0;
-  onoffx=f.onoffx.checked;
+  oox=f.oox.checked;
+  ooo=f.ooo.checked;
+  oo3=f.oo3.checked;
+  ooc=f.ooc.checked;
   if(dr&&!depth)  _drawboard();
 }
 function _wx(e,x) {
@@ -777,9 +782,19 @@ function _setclr(i) { mxa[i].checked=true; monochg(1); }
 
 function _cmd(a) {
   if(a) a.forEach(function(x) {
-    if(/quad|hexa|tria|penta|cubes|delta|trap|deca/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:x=='penta'?5:x=='cubes'?6:x=='delta'?7:x=='trap'?8:x=='deca'?9:0].checked=1,hexachg();
-    else if(/sol|shift|onoff/.test(x)) (onoff=x=='onoffo'?2:x=='onoffx'?4:x=='onoff3'?3:x=='onoff'?1:0)?(f.onoff2.value=onoff):0,f.onoff.value=onoff?1:x=='shift'?2:0;
-    else if(/white_/.test(x)) whitechg(0,x.substr(6));
+    x=x.trim();
+    if(/^@|^$/.test(x)) return;
+    else if(/quad|hexa|tria|penta|cubes|delta|trap|deca/.test(x)) hexa=hxa[x=='hexa'?1:x=='tria'?2:x=='tria2'?3:x=='tria4'?4:x=='penta'?5:x=='cubes'?6:x=='delta'?7:x=='trap'?8:x=='deca'?9:0].checked=1,hexachg();
+    else if(/sol|shift|onoff/.test(x)) {
+      var oo;
+      if(x=='onoff') onoff=1,oox=oo3=ooc=ooo=0;
+      if(x=='onoffx') onoff=1,oox=1;
+      if(x=='onoffo') onoff=1,ooo=1;
+      if(x=='onoff3') onoff=1,oo3=1;
+      if(x=='onoffc') onoff=1,ooc=1;
+      f.onoff.value=oo=x=='sol'?0:x=='shift'?2:1
+      if(oo-1) onoff=0,shifter=oo==2;
+    } else if(/white_/.test(x)) whitechg(0,x.substr(6));
     else if(/(no)?diag/.test(x)) f.diag.checked=(diag=x=='diag');
     else if(/col\d+/.test(x))
       x=+x.substr(3),depth++,mxa[x==2?1:x==23?2:x==3?3:x==4?4:0].checked=1,monochg();
@@ -1118,9 +1133,9 @@ function _board2block(fx) {
 }
 
 function parse(txt) {
-  var cmd=txt.match(/^\s*\/\/.*/);
+  var cmd=txt.match(/^\s*\/\/(.*)/);
   if(cmd) {
-    cmd=cmd[0].match(/\b(shift|sol|onoff[3xo]?|white_[xobwfe]+|deca|quad|hexa|tria[24]?|penta|cubes|delta|trap|col[1234]|col23|(no)?diag)\b/g);
+    cmd=cmd[1].split(',');
     _cmd(cmd);
   }
   txt=txt.replace(/\/\/.*(\n|$)/g,'');
@@ -1162,7 +1177,7 @@ function _white() {
 function _game2txt() {
   var s=[],c,e,l,r,x,y,xi=-1,yi,ya=0,n,wh=f.white2.value!='xxff'||_white();
   n=f.ta.value.match(/@[^,\r\n]+/);
-  n='//'+(n?n[0]+',':'')+(deca?'deca':trap?'trap':delta?'delta':cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(shifter?',shift':onoff?onoff==3?',onoff3':onoff==4?',onoffx':onoff==2?',onoffo':',onoff':',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
+  n='//'+(n?n[0]+',':'')+(deca?'deca':trap?'trap':delta?'delta':cubes?'cubes':penta?'penta':tria4?'tria4':tria2?'tria2':tria?'tria':hexa?'hexa':'quad')+(faller?',fall':shifter?',shift':onoff?',onoff'+(ooc?',onoffc':oo3?',onoff3':'')+(oox?',onoffx':'')+(ooo?',onoffo':''):',sol')+(wh?',white_'+white:'')+(diag?',diag':'');
   for(y=0;y<board.length;y++) {
     l='',r=board[y];
     for(x=0;x<r.length;x++) {
@@ -3952,6 +3967,44 @@ function _shifter(up,mu,ev) {
   return [px,py,[b,opt],i];
 }
 
+function _fall(xy,pi) {
+  var ch,i,j=pi,x,y,n=xy.length>>1,b;
+  for(i=0;i<n;i++,pi=(pi+2)%xy.length) {
+    b=board[y=xy[pi+1]];
+    if(b&&('o'==(ch=b[x=xy[pi]])||'w'==ch)) {
+      if(j!=pi) board[xy[j+1]][xy[j]]=ch,b[x]='x'; 
+      j=(j+2)%xy.length;
+    }
+  }
+}
+function _faller(up,mu,ev) {
+  var x,y,ch,n,nx,ny,px=mp[0],py=mp[1],ex=mu[5],ey=mu[6],b,m,i,j,xy,pi,opt=diag;
+  b=_shiftb(px,py,ex,ey);
+  xy=_shiftxy(px,py,b,opt),pi=xy.pop();
+  if(up) {
+    var y,by,n;
+    for(y=0;by=board[y];y++) {
+      for(x=0;ch=by[x];x++) 
+        if(_xo(ch)) {
+          n=_next(x,y,b,opt);
+          if(!(cy=board[ny=n[1]])||!_xo(cy[nx=n[0]])||_blocked(x,y,nx,ny)) {
+            xy=_shiftxy(x,y,b,opt),pi=xy.pop();
+            _fall(xy,pi);
+          }
+        }
+    }
+    sele=[];
+    _moves(1);
+    _drawboard();
+    _beep();
+  } else {
+    sele=[];
+    for(j=0;j<xy.length;j+=2) if(xy.length==2||xy[j]!=px||xy[j+1]!=py) sele.push(xy[j],xy[j+1]);
+    _drawboard();
+  }
+  return [px,py,[b,opt],i];
+}
+
 function _drect(px,py,mx,my,c) {
   var x,y,b,r;
   if(px>mx) r=px,px=mx,mx=r;
@@ -4132,7 +4185,7 @@ function _mmove(e,d) {
   var xy=_mxy(e),mm2=mm,b=board[xy[1]],bp=board[mp[1]],bc=bp&&bp[mp[0]],dm,r,x7;
   if(design==7) x7=1,xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),0,128);
   if(design==8) x7=1,xy[7]=_idx(xy[5],xy[6],_points(xy[0],xy[1]),tria?2:0);
-  if(shifter&&!design) x7=1,xy[7]=_idx(xy[5],xy[6],trap?_points11h(xy[0],xy[1]):_points(xy[0],xy[1]),trap?diag:2)
+  if((faller||shifter)&&!design) x7=1,xy[7]=_idx(xy[5],xy[6],trap?_points11h(xy[0],xy[1]):_points(xy[0],xy[1]),trap?diag:2)
   dm=_design(e);
   if(dm==5||dm==6) {
     if(!d) {
@@ -4146,6 +4199,7 @@ function _mmove(e,d) {
   mm=xy,mm1=0;
   if(dm) _mdesign(dm,0,xy,e);
   else if(shifter) _shifter(0,xy,e); 
+  else if(faller) _faller(0,xy,e); 
 }
 
 function _full() {
@@ -4422,8 +4476,8 @@ function _switch3(x,y,mask,d,u) {
 
 function _switchi(x,y,xy,u) {
   var swP=u?_switchN:_switchP,swN=u?_switchP:_switchN;
-  var i,x2,y2,xyc=[],c,_f1=onoff>3?swN:onoff>2?swP:_switch,_f2=onoff>2?swP:_switch;
-  if(onoff!=2) _f1(x,y);
+  var i,x2,y2,xyc=[],c,_f1=ooc?swN:oo3?swP:_switch,_f2=oo3?swP:_switch;
+  if(!ooo) _f1(x,y);
   c=_getpgc(x,y);
   for(i=0;i<xy.length;i+=2) {
     _f2(x2=xy[i],y2=xy[i+1]);
@@ -5050,29 +5104,29 @@ function _switch26(x,y,mask,d,u) {
 function _mask(x6,x,y,p3) {
   if(hexa||deca) return x6==9?62:x6==7?43:x6==6?39:x6==5?34:x6==4?9:x6==3?54:x6==2?35:x6==1?21:63;
   if(trap) {
-    if(onoffx) return 1;
+    if(oox) return 1;
     return x6==2?15:x6==1?2:1;
   }
   if(delta) { 
     var m;
-    if(onoffx) return x6==2?3:x6==1?2:1;
+    if(oox) return x6==2?3:x6==1?2:1;
     m=x6==3?0x1:x6==2?3:x6==1?0x1111:0xf;
     return m;
   }
   if(cubes) {
     var d=(x+2)%3,b=(p3==4||p3==12),m;
-    if(onoffx) return 1;
+    if(oox) return 1;
     m=x6==6?23:x6==4?8:x6==3?0x3333:x6==2?0x55:x6==1?0x1111:65535;
     if(!b) m=(m&0xf)|((m&0xff00)>>4)|((m&0xf0)<<8);
     return m;
   }
   if(penta) {
-    if(onoffx) return x6==2?0x2:x6==1?0x1:0x11111;
+    if(oox) return x6==2?0x2:x6==1?0x1:0x11111;
     return x6==6?23:x6==4?18:x6==3?30:x6==2?19:x6==1?13:31;
   }
   if(tria2||tria4) return 1;
   if(tria) {
-    if(onoffx) return x6==4?0xc0300:x6==3?8:x6==2?4:x6==1?0x30303:0xf0f0f;
+    if(oox) return x6==4?0xc0300:x6==3?8:x6==2?4:x6==1?0x30303:0xf0f0f;
     return x6==9?0xd0308:x6==7?0x8000f:x6==6?0x10305:x6==4?0x10100:x6==3?0x70707:x6==2?0xd030f:x6==1?0x10101:0xf0f0f;
   }
   return x6==9?192|6:x6==7?131+16:x6==6?119:x6==4?17:x6==3?187:x6==2?69:x6==1?85:255;
@@ -5104,11 +5158,16 @@ function _mup(e) {
     undo.length=redo;undo[redo++]=ua;
     return;
   }
+  if(faller) {
+    var ua=_faller(1,mxy,e); ;
+    //undo.length=redo;undo[redo++]=ua;
+    return;
+  }
   if(onoff) {
     var c=board[ly][lx];
     if(c=='w'||c=='o'||c=='x') {
       var mc=mxy[4],p=0,p2,p3,x6=+f.onoff6.value,xyc;
-      if(onoffx) {
+      if(oox) {
         hexa?(p=26,_switch26(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points16(lx,ly),x6==6)))
         :trap?(p=21,_switch21(lx,ly,p2=_mask(x6),p3=_idx(mxy[5],mxy[6],_points11(lx,ly),x6==6)))
         :deca?(p=20,_switch20(lx,ly,p2=_mask(x6),p3=(diag?256:0)|_dir10(mxy[5],mxy[6],lx,ly)))
